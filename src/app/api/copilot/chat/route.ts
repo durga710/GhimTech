@@ -1,30 +1,29 @@
 /**
  * /api/copilot/chat
- *   POST → streaming chat with GPT-5, grounded in the operator's live
- *          projects + open tasks. Body: { messages: [{role, content}] }.
- *          Returns a text/plain token stream.
+ *   POST → agentic chat with GPT-5 (OpenAI Responses API). The copilot can
+ *          browse the web (built-in web_search) and call function tools that
+ *          act on the operator's tasks, projects, notes, and linked repos.
+ *          Body: { messages: [{role, content}] }.
+ *          Returns { ok, data: { text, actions: [{tool, label}] } }.
  *
- * Operator-only, rate-limited.
+ * Operator-only, rate-limited. Non-streaming (an agent turn may run several
+ * tool round-trips).
  */
 
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { apiErrors } from "@/lib/api-response";
+import { ok, apiErrors } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
 import { getOpenAI, OPENAI_MODEL } from "@/lib/openai";
+import { COPILOT_TOOLS, executeTool, toolLabel } from "@/lib/copilot-tools";
 import { z } from "zod";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const ChatSchema = z.object({
   messages: z
-    .array(
-      z.object({
-        role: z.enum(["user", "assistant"]),
-        content: z.string().min(1).max(8000),
-      }),
-    )
+    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1).max(8000) }))
     .min(1)
     .max(40),
 });
@@ -32,7 +31,7 @@ const ChatSchema = z.object({
 export async function POST(req: Request) {
   const user = await requireUser();
 
-  const rl = rateLimit(`copilot.chat:${user.id}`, { limit: 120, windowMs: 60 * 60 * 1000 });
+  const rl = rateLimit(`copilot.chat:${user.id}`, { limit: 100, windowMs: 60 * 60 * 1000 });
   if (!rl.success) return apiErrors.rateLimit(rl.reset);
 
   const ai = getOpenAI();
@@ -47,62 +46,87 @@ export async function POST(req: Request) {
   const parsed = ChatSchema.safeParse(body);
   if (!parsed.success) return apiErrors.validation(parsed.error);
 
-  // Fresh, server-side context (never trust the client for this).
+  // Compact live context for the system instructions.
   const [projects, tasks] = await Promise.all([
     prisma.project.findMany({
       where: { userId: user.id, status: { not: "ARCHIVED" } },
-      select: { name: true, status: true, progress: true, sourceRepo: true },
+      select: { name: true, slug: true, status: true, progress: true },
       orderBy: { updatedAt: "desc" },
       take: 20,
     }),
     prisma.task.findMany({
       where: { userId: user.id, status: { not: "DONE" } },
-      orderBy: [{ priority: "desc" }, { dueAt: "asc" }],
-      select: { title: true, priority: true, status: true },
-      take: 30,
+      orderBy: [{ priority: "desc" }],
+      select: { title: true, priority: true },
+      take: 25,
     }),
   ]);
 
-  const context =
+  const instructions =
+    "You are the founder's operations copilot inside their dashboard. Be direct, concrete, and genuinely useful. " +
+    "You can BROWSE THE WEB (web_search) and CALL TOOLS that act on the operator's real data (list/create tasks, update task status, list projects, create notes, read a project's linked GitHub repo). " +
+    "Use tools when they help — actually create/update things when asked, search the web for current info, read the repo when asked about a project's direction. After acting, confirm what you did in one line. Reference projects/tasks by name. Keep replies tight unless asked to expand.\n\n" +
+    "--- LIVE CONTEXT ---\n" +
     `Operator: ${user.firstName ?? "the founder"}.\n` +
-    `Projects:\n${projects.map((p) => `- ${p.name} [${p.status}, ${p.progress}%]${p.sourceRepo ? ` (repo ${p.sourceRepo})` : ""}`).join("\n") || "- (none)"}\n` +
-    `Open tasks:\n${tasks.map((t) => `- [${t.priority}] ${t.title}`).join("\n") || "- (none)"}`;
+    `Projects: ${projects.map((p) => `${p.name} (slug ${p.slug}) [${p.status} ${p.progress}%]`).join("; ") || "none"}\n` +
+    `Top open tasks: ${tasks.map((t) => `[${t.priority}] ${t.title}`).join("; ") || "none"}`;
 
-  const system =
-    "You are the founder's operations copilot, embedded in their dashboard. Be direct, concrete, and genuinely useful — like a sharp chief of staff who knows their work. " +
-    "Ground answers in the live context below; reference specific projects and tasks by name when relevant. Keep replies tight unless asked to go deep. If asked to draft something, write the actual thing.\n\n" +
-    `--- LIVE CONTEXT ---\n${context}`;
+  const actions: { tool: string; label: string }[] = [];
 
   try {
-    const stream = await ai.chat.completions.create({
+    // First turn: the full conversation as input.
+    let resp = await ai.responses.create({
       model: OPENAI_MODEL,
-      messages: [{ role: "system", content: system }, ...parsed.data.messages],
-      stream: true,
+      instructions,
+      input: parsed.data.messages.map((m) => ({ role: m.role, content: m.content })),
+      tools: COPILOT_TOOLS,
+      store: true,
     });
 
-    const encoder = new TextEncoder();
-    const rs = new ReadableStream<Uint8Array>({
-      async start(controller) {
+    // Note web searches the model performed.
+    for (const item of resp.output ?? []) {
+      if (item.type === "web_search_call") actions.push({ tool: "web_search", label: toolLabel("web_search", null) });
+    }
+
+    // Tool round-trips for our custom function tools (max 6 hops).
+    for (let hop = 0; hop < 6; hop++) {
+      const calls = (resp.output ?? []).filter(
+        (o): o is Extract<typeof o, { type: "function_call" }> => o.type === "function_call",
+      );
+      if (calls.length === 0) break;
+
+      const outputs = [];
+      for (const call of calls) {
+        let result: unknown;
         try {
-          for await (const chunk of stream) {
-            const token = chunk.choices?.[0]?.delta?.content;
-            if (token) controller.enqueue(encoder.encode(token));
-          }
-        } catch {
-          controller.enqueue(encoder.encode("\n\n[stream interrupted]"));
-        } finally {
-          controller.close();
+          const parsedArgs = JSON.parse(call.arguments || "{}") as Record<string, unknown>;
+          result = await executeTool(call.name, parsedArgs, user.id);
+        } catch (e) {
+          result = { error: e instanceof Error ? e.message : "tool failed" };
         }
-      },
-    });
+        actions.push({ tool: call.name, label: toolLabel(call.name, result) });
+        outputs.push({
+          type: "function_call_output" as const,
+          call_id: call.call_id,
+          output: JSON.stringify(result).slice(0, 8000),
+        });
+      }
 
-    return new Response(rs, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Cache-Control": "no-store",
-        "X-Accel-Buffering": "no",
-      },
-    });
+      resp = await ai.responses.create({
+        model: OPENAI_MODEL,
+        previous_response_id: resp.id,
+        input: outputs,
+        tools: COPILOT_TOOLS,
+        store: true,
+      });
+
+      for (const item of resp.output ?? []) {
+        if (item.type === "web_search_call") actions.push({ tool: "web_search", label: toolLabel("web_search", null) });
+      }
+    }
+
+    const text = resp.output_text?.trim() || "Done.";
+    return ok({ text, actions });
   } catch (e) {
     console.error("[copilot-chat]", e);
     return apiErrors.internal();
