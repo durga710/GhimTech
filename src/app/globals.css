@@ -36,6 +36,11 @@
     background-attachment: fixed;
   }
 
+  /* Editorial display serif on all headings */
+  h1, h2, h3 {
+    @apply font-display;
+  }
+
   /* Scrollbar — refined carbon look */
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }

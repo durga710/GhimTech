@@ -1,9 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
+import { Fraunces, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { FOUNDER } from "@/lib/content";
 import "./globals.css";
+
+// Editorial type system — Fraunces (display serif) + Hanken Grotesk (body)
+// + IBM Plex Mono (labels/data). Self-hosted via next/font.
+const fontDisplay = Fraunces({ subsets: ["latin"], variable: "--font-display", display: "swap" });
+const fontSans = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+const fontMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://ghimtech.org"),
@@ -73,13 +83,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       appearance={{
         variables: {
           colorPrimary: "#3aa4ff",
-          fontFamily: "Geist, system-ui, sans-serif",
+          fontFamily: "var(--font-sans), system-ui, sans-serif",
         },
       }}
     >
       <html
         lang="en"
-        className={`${GeistSans.variable} ${GeistMono.variable} dark`}
+        className={`${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable} dark`}
         suppressHydrationWarning
       >
         <body className="font-sans">

@@ -68,10 +68,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        // Geist Sans as display + body
-        display: ["var(--font-geist)", "system-ui", "sans-serif"],
-        sans: ["var(--font-geist)", "system-ui", "sans-serif"],
-        // JetBrains Mono for HUD readouts, timestamps, telemetry
+        // Editorial: Fraunces (display serif) + Hanken Grotesk (body) + IBM Plex Mono
+        display: ["var(--font-display)", "Georgia", "serif"],
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       fontSize: {
