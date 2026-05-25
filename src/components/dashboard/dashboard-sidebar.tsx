@@ -9,6 +9,7 @@ import {
   CheckSquare,
   BarChart3,
   Bell,
+  Inbox,
   Settings,
   ArrowLeft,
   Sparkles,
@@ -30,6 +31,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/inbox", label: "Inbox", icon: Inbox },
   { href: "/dashboard/projects", label: "Projects", icon: FolderKanban },
   { href: "/dashboard/tasks", label: "Tasks", icon: CheckSquare },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
@@ -37,7 +39,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/copilot", label: "AI Copilot", icon: Sparkles },
 ] as const;
 
-export function DashboardSidebar() {
+export function DashboardSidebar({ inboxUnread = 0 }: { inboxUnread?: number }) {
   const pathname = usePathname();
 
   return (
@@ -93,6 +95,11 @@ export function DashboardSidebar() {
                   <span className="relative">{item.label}</span>
                   {item.label === "Alerts" && (
                     <span className="relative ml-auto h-1.5 w-1.5 rounded-full bg-flare-400 animate-pulse-vital" />
+                  )}
+                  {item.label === "Inbox" && inboxUnread > 0 && (
+                    <span className="relative ml-auto grid h-[18px] min-w-[18px] place-items-center rounded-full bg-signal-400 px-1 text-[10px] font-bold text-ink-950">
+                      {inboxUnread > 99 ? "99+" : inboxUnread}
+                    </span>
                   )}
                 </Link>
               </li>

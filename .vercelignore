@@ -1,0 +1,8 @@
+# Never upload local secrets or build artifacts to Vercel.
+# Production env vars live in Vercel's encrypted store, not in files.
+.env
+.env.*
+!.env.example
+.next
+node_modules
+.git

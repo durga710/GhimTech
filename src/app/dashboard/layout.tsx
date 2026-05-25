@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { DashboardTopbar } from "@/components/dashboard/dashboard-topbar";
+import { getInboxUnreadCount } from "@/lib/dashboard/data";
 
 export const metadata: Metadata = {
   title: "Command Center",
@@ -21,11 +22,13 @@ export const metadata: Metadata = {
  * NOTE: This layout deliberately does NOT include the marketing TopNav or
  * SiteFooter. Dashboards live in their own visual universe.
  */
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const inboxUnread = await getInboxUnreadCount();
+
   return (
     <div className="relative min-h-screen bg-ink-950">
       {/* Subtle backdrop — dimmer than the marketing pages, easier on eyes for long sessions */}
@@ -38,7 +41,7 @@ export default function DashboardLayout({
                         bg-[radial-gradient(circle,rgba(58,164,255,0.06),transparent_70%)] blur-3xl" />
       </div>
 
-      <DashboardSidebar />
+      <DashboardSidebar inboxUnread={inboxUnread} />
 
       <div className="lg:pl-60">
         <DashboardTopbar />

@@ -104,6 +104,13 @@ export const ContactSchema = z.object({
 
 export type ContactInput = z.infer<typeof ContactSchema>;
 
+// ============ Contact message admin (dashboard inbox) ============
+export const ContactMessageUpdateSchema = z.object({
+  read: z.boolean().optional(),
+  archived: z.boolean().optional(),
+});
+export type ContactMessageUpdate = z.infer<typeof ContactMessageUpdateSchema>;
+
 // ============ User preferences ============
 export const UserPreferencesUpdateSchema = z.object({
   peaceOfMindMode: z.boolean().optional(),

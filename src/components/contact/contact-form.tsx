@@ -15,11 +15,9 @@ import { cn } from "@/lib/utils";
  * (idle | submitting | success | error) so each state can be rendered
  * exactly once and animated cleanly.
  *
- * The POST currently goes to /api/contact, which Phase 3 will wire up to
- * either Resend or a simple webhook → durga@rayhealthevv.com.
- *
- * Until the API route ships, the form simulates a 1.2s submission so the
- * success state is exercisable.
+ * Submits to POST /api/contact, which validates (Zod), rate-limits per IP,
+ * and stores the message. The operator reads incoming messages in the
+ * dashboard Inbox (/dashboard/inbox).
  */
 
 const ContactSchema = z.object({
@@ -68,23 +66,35 @@ export function ContactForm() {
     setState({ kind: "submitting" });
 
     try {
-      // TODO Phase 4: replace with real /api/contact route hooked to Resend or webhook
-      // For now, simulate a real submission so the success state can be tested.
-      await new Promise((r) => setTimeout(r, 1200));
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
-      // In production this would be:
-      // const res = await fetch("/api/contact", { method: "POST", body: JSON.stringify(data) });
-      // if (!res.ok) throw new Error("Send failed");
+      if (res.status === 429) {
+        setState({
+          kind: "error",
+          message: "Too many messages from your network right now. Please try again later.",
+        });
+        return;
+      }
 
-      // Voiding the data here for the simulation
-      void data;
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        setState({
+          kind: "error",
+          message: json?.error?.message ?? "Something went wrong. Please try again.",
+        });
+        return;
+      }
 
       setState({ kind: "success" });
       reset();
-    } catch (err) {
+    } catch {
       setState({
         kind: "error",
-        message: err instanceof Error ? err.message : "Something went wrong. Try again.",
+        message: "Couldn't reach the server. Check your connection and try again.",
       });
     }
   }

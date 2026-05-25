@@ -452,3 +452,70 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   return { user, projects, tasks, notifications, summary, analytics, opsMetrics };
 }
+
+/* ============================================================
+   Inbox — public contact-form submissions ("send me a message").
+   ContactMessage has no userId (single-operator app), so these are
+   auth-gated but not user-filtered.
+   ============================================================ */
+
+export type ContactPurpose = "agency" | "partner" | "press" | "hello" | "other";
+
+export interface DashContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  purpose: ContactPurpose;
+  message: string;
+  when: string; // relative, e.g. "5m ago"
+  receivedAt: string; // ISO
+  read: boolean;
+  archived: boolean;
+}
+
+export interface InboxData {
+  messages: DashContactMessage[];
+  unreadCount: number;
+}
+
+const CONTACT_PURPOSES: readonly string[] = ["agency", "partner", "press", "hello", "other"];
+function toPurpose(p: string): ContactPurpose {
+  return (CONTACT_PURPOSES.includes(p) ? p : "other") as ContactPurpose;
+}
+
+/**
+ * All non-archived contact messages, newest first, plus unread count.
+ * Auth-gated via requireUserId() but not user-scoped — ContactMessage is
+ * global to the single operator.
+ */
+export async function getInbox(): Promise<InboxData> {
+  await requireUserId();
+
+  const rows = await prisma.contactMessage.findMany({
+    where: { archived: false },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+  });
+
+  const messages: DashContactMessage[] = rows.map((m) => ({
+    id: m.id,
+    name: m.name,
+    email: m.email,
+    purpose: toPurpose(m.purpose),
+    message: m.message,
+    when: relativeTime(m.createdAt.toISOString()),
+    receivedAt: m.createdAt.toISOString(),
+    read: m.readAt !== null,
+    archived: m.archived,
+  }));
+
+  return { messages, unreadCount: messages.filter((m) => !m.read).length };
+}
+
+/** Lightweight unread count for the sidebar badge. */
+export async function getInboxUnreadCount(): Promise<number> {
+  await requireUserId();
+  return prisma.contactMessage.count({
+    where: { archived: false, readAt: null },
+  });
+}
