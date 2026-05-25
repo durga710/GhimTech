@@ -31,16 +31,6 @@ export function SiteFooter() {
             Building systems that improve care, accountability, and operational
             peace of mind.
           </p>
-
-          <div className="pt-2 flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-full bg-white/[0.04] ring-1 ring-inset ring-white/10 grid place-items-center">
-              <span className="font-mono text-[10px] font-medium text-zinc-400">DG</span>
-            </div>
-            <div className="text-xs leading-tight">
-              <div className="text-zinc-300">{FOUNDER.name}</div>
-              <div className="label-tactical mt-0.5">{FOUNDER.shortBio}</div>
-            </div>
-          </div>
         </div>
 
         {/* Routes */}
