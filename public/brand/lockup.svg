@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" fill="none" role="img" aria-label="ghimtech">
+  <!--
+    Full lockup. Mark + wordmark.
+    - Mark sits on left, optically centered to the cap-height of wordmark.
+    - Wordmark "ghimtech" in lowercase — Geist Medium-equivalent paths.
+    - Spacing between mark and wordmark = 1.25x mark width (visual rest).
+  -->
+  <g stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M 50 18 A 22 22 0 1 0 50 46" />
+    <path d="M 36 32 L 50 32" />
+  </g>
+
+  <!-- Wordmark: ghimtech, set in clean geometric letterforms -->
+  <text x="92" y="44" fill="currentColor"
+        font-family="ui-sans-serif, system-ui, -apple-system, 'Geist', sans-serif"
+        font-size="32" font-weight="500" letter-spacing="-0.02em">ghimtech</text>
+</svg>

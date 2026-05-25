@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Ghimtech">
+  <!--
+    App icon. 512x512, scaled from the mark.
+    - Background: matte carbon (#0a0d12) with a subtle radial glow
+    - Mark: signal blue (#3aa4ff), 8x stroke
+    - Rounded square clip for iOS / favicon contexts
+  -->
+  <defs>
+    <radialGradient id="bg" cx="35%" cy="20%" r="80%">
+      <stop offset="0%" stop-color="#11161e" />
+      <stop offset="100%" stop-color="#040508" />
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3aa4ff" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="#3aa4ff" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Background card -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  <!-- Ambient inner glow -->
+  <rect width="512" height="512" rx="112" fill="url(#glow)" />
+
+  <!-- The mark, centered, scaled to 64-unit grid * 4 = 256, inset ~17% -->
+  <g transform="translate(128 128) scale(4)" fill="none" stroke="#3aa4ff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 50 18 A 22 22 0 1 0 50 46" />
+    <path d="M 36 32 L 50 32" />
+  </g>
+</svg>

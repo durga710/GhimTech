@@ -1,0 +1,354 @@
+// =========================================================
+// Ghimtech / Durga OS — Prisma schema
+//
+// Single-operator design. There is ONE user (Durga, the founder).
+// Clerk is the source of truth for identity; we mirror clerkId
+// so foreign keys to local entities work and we don't have to
+// hit Clerk's API every time we want to know "whose task is this".
+//
+// Postgres via Supabase. Designed for the founder OS:
+//   - personal projects, tasks, notes
+//   - roadmap, deployments, analytics
+//   - AI-generated summaries
+//   - dashboard widget layout
+//   - audit log for every write
+// =========================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============== ENUMS ==============
+
+enum ProjectStatus {
+  EXPLORING
+  ACTIVE
+  SHIPPING
+  MAINTAINING
+  PAUSED
+  ARCHIVED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  BLOCKED
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum NotificationKind {
+  INFO
+  ALERT
+  DEPLOY
+  AGENT
+  SUCCESS
+}
+
+enum DeploymentStatus {
+  QUEUED
+  BUILDING
+  SUCCESS
+  FAILED
+  CANCELED
+}
+
+// ============== USER ==============
+
+model User {
+  id            String   @id @default(cuid())
+  clerkId       String   @unique
+  email         String   @unique
+  firstName     String?
+  lastName      String?
+  avatarUrl     String?
+  timezone      String   @default("America/New_York")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  projects      Project[]
+  tasks         Task[]
+  notes         Note[]
+  notifications Notification[]
+  widgets       Widget[]
+  summaries     AiSummary[]
+  goals         Goal[]
+  auditLogs     AuditLog[]
+  preferences   UserPreferences?
+
+  @@index([clerkId])
+}
+
+model UserPreferences {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  peaceOfMindMode    Boolean  @default(false)
+  dashboardDensity   String   @default("comfortable")
+  notificationEmail  Boolean  @default(true)
+  weeklyDigest       Boolean  @default(true)
+  aiBriefEnabled     Boolean  @default(true)
+  updatedAt          DateTime @updatedAt
+}
+
+// ============== PROJECTS ==============
+
+model Project {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  name        String
+  tagline     String?
+  description String?       @db.Text
+  status      ProjectStatus @default(ACTIVE)
+  progress    Int           @default(0)
+  pinned      Boolean       @default(false)
+  color       String?
+  startedAt   DateTime?
+  shipAt      DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  milestones    Milestone[]
+  tasks         Task[]
+  roadmapItems  RoadmapItem[]
+  deployments   DeploymentLog[]
+  analytics     AnalyticsEvent[]
+  summaries     AiSummary[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([pinned])
+}
+
+model Milestone {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  description String?   @db.Text
+  achievedAt  DateTime?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([projectId, order])
+}
+
+model RoadmapItem {
+  id          String    @id @default(cuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  description String?   @db.Text
+  quarter     String?
+  status      String    @default("planned")
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([projectId])
+}
+
+// ============== TASKS ==============
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?    @db.Text
+  status      TaskStatus @default(TODO)
+  priority    Priority   @default(MEDIUM)
+  dueAt       DateTime?
+  completedAt DateTime?
+
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  projectId   String?
+  project     Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  tags        String[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([userId, status])
+  @@index([projectId])
+  @@index([dueAt])
+}
+
+// ============== NOTES ==============
+
+model Note {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String   @db.Text
+  tags      String[]
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, pinned])
+}
+
+// ============== AI SUMMARIES ==============
+
+model AiSummary {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  scope       String
+  headline    String
+  body        String   @db.Text
+  highlights  String[]
+  model       String?
+  generatedAt DateTime @default(now())
+
+  @@index([userId, scope, generatedAt])
+}
+
+// ============== NOTIFICATIONS ==============
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      NotificationKind @default(INFO)
+  title     String
+  body      String?          @db.Text
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+// ============== ANALYTICS ==============
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  userId     String?
+  projectId  String?
+  project    Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  event      String
+  payload    Json?
+  occurredAt DateTime @default(now())
+
+  @@index([event, occurredAt])
+  @@index([projectId, occurredAt])
+  @@index([userId, occurredAt])
+}
+
+// ============== DASHBOARD WIDGETS ==============
+
+model Widget {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String?
+  config    Json?
+  x         Int      @default(0)
+  y         Int      @default(0)
+  w         Int      @default(4)
+  h         Int      @default(3)
+  visible   Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, order])
+}
+
+// ============== DEPLOYMENTS ==============
+
+model DeploymentLog {
+  id          String           @id @default(cuid())
+  projectId   String
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status      DeploymentStatus @default(QUEUED)
+  environment String           @default("production")
+  commitSha   String?
+  commitMsg   String?
+  branch      String?
+  deployedAt  DateTime         @default(now())
+  durationMs  Int?
+  url         String?
+
+  @@index([projectId, deployedAt])
+  @@index([status])
+}
+
+// ============== GOALS ==============
+
+model Goal {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  target    Int       @default(100)
+  current   Int       @default(0)
+  unit      String?
+  period    String    @default("monthly")
+  startsAt  DateTime  @default(now())
+  endsAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+// ============== AUDIT LOG ==============
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  target    String?
+  diff      Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ============== CONTACT MESSAGES ==============
+
+model ContactMessage {
+  id        String    @id @default(cuid())
+  name      String
+  email     String
+  purpose   String
+  message   String    @db.Text
+  ip        String?
+  userAgent String?
+  readAt    DateTime?
+  archived  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  @@index([readAt])
+  @@index([createdAt])
+}

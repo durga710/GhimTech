@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Ghimtech">
+  <!--
+    Ghimtech mark.
+    A geometric G built from a single continuous arc + horizontal stroke.
+    - 64x64 grid; stroke-width 7 lands on integer pixels at 32/64/128/256.
+    - Round caps so the opening reads as intentional, not cut.
+    - Single color (currentColor) so this works on dark, light, ink, foil.
+    - No fill, only stroke — keeps it crisp at every size.
+  -->
+  <g stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Main arc: open G shape, gap at upper-right (the "signal" opening) -->
+    <path d="M 50 18
+             A 22 22 0 1 0 50 46" />
+    <!-- Inner horizontal: the bar that closes the G into a recognizable letter -->
+    <path d="M 36 32 L 50 32" />
+  </g>
+</svg>
