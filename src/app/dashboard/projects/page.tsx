@@ -3,6 +3,7 @@ import { FolderKanban } from "lucide-react";
 import { getProjects } from "@/lib/dashboard/data";
 import { relativeTime } from "@/lib/dashboard/format";
 import { cn } from "@/lib/utils";
+import { NewProjectButton } from "@/components/dashboard/projects/new-project-button";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -21,14 +22,17 @@ export default async function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl grid place-items-center bg-signal-400/10 border border-signal-400/20">
-          <FolderKanban className="h-5 w-5 text-signal-300" />
+      <header className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl grid place-items-center bg-signal-400/10 border border-signal-400/20">
+            <FolderKanban className="h-5 w-5 text-signal-300" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold text-white">Projects</h1>
+            <p className="text-sm text-zinc-500">{projects.length} active</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-semibold text-white">Projects</h1>
-          <p className="text-sm text-zinc-500">{projects.length} active</p>
-        </div>
+        <NewProjectButton />
       </header>
 
       {projects.length === 0 ? (
