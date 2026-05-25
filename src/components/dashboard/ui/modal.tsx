@@ -13,11 +13,13 @@ export function Modal({
   onClose,
   title,
   children,
+  maxWidthClass = "max-w-md",
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  maxWidthClass?: string;
 }) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -45,7 +47,7 @@ export function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 8 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative w-full max-w-md glass-panel-strong p-6"
+            className={`relative w-full ${maxWidthClass} glass-panel-strong p-6`}
           >
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-base font-semibold text-white">{title}</h2>

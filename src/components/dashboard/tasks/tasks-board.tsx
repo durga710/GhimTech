@@ -6,6 +6,7 @@ import { Circle, CheckCircle2, Loader2 } from "lucide-react";
 import type { DashTask, TaskStatus, TaskPriority } from "@/lib/dashboard/data";
 import { dueLabel } from "@/lib/dashboard/format";
 import { cn } from "@/lib/utils";
+import { TaskWorkButton } from "@/components/dashboard/tasks/task-work-button";
 
 const STATUS_TO_API: Record<TaskStatus, string> = {
   todo: "TODO",
@@ -109,6 +110,7 @@ export function TasksBoard({ initialTasks }: { initialTasks: DashTask[] }) {
                           )}
                         </div>
                       </div>
+                      <TaskWorkButton taskId={t.id} title={t.title} />
                     </div>
                   </motion.li>
                 );
