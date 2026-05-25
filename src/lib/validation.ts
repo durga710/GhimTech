@@ -111,6 +111,33 @@ export const ContactMessageUpdateSchema = z.object({
 });
 export type ContactMessageUpdate = z.infer<typeof ContactMessageUpdateSchema>;
 
+// ============ Copilot project-update proposal (GitHub-informed) ============
+export const CopilotProposalSchema = z.object({
+  suggestedProgress: z.number().int().min(0).max(100).optional(),
+  milestones: z
+    .array(z.object({ title: z.string().min(1).max(300), description: z.string().max(2000).optional() }))
+    .max(20)
+    .optional()
+    .default([]),
+  roadmap: z
+    .array(
+      z.object({
+        title: z.string().min(1).max(300),
+        quarter: z.string().max(20).optional(),
+        status: z.string().max(40).optional(),
+      }),
+    )
+    .max(20)
+    .optional()
+    .default([]),
+  tasks: z
+    .array(z.object({ title: z.string().min(1).max(300), priority: PriorityEnum.optional() }))
+    .max(30)
+    .optional()
+    .default([]),
+});
+export type CopilotProposal = z.infer<typeof CopilotProposalSchema>;
+
 // ============ User preferences ============
 export const UserPreferencesUpdateSchema = z.object({
   peaceOfMindMode: z.boolean().optional(),

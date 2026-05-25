@@ -5,6 +5,7 @@ import { ArrowLeft, FolderKanban, Flag, Map as MapIcon, Rocket, CheckSquare } fr
 import { getProjectDetail } from "@/lib/dashboard/data";
 import { relativeTime } from "@/lib/dashboard/format";
 import { cn } from "@/lib/utils";
+import { CopilotSyncPanel } from "@/components/dashboard/copilot/copilot-sync-panel";
 
 export const metadata: Metadata = {
   title: "Project",
@@ -67,6 +68,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           </p>
         )}
       </section>
+
+      {project.sourceRepo && (
+        <CopilotSyncPanel projectId={project.id} repo={project.sourceRepo} currentProgress={project.progress} />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <section className="glass-panel p-6">

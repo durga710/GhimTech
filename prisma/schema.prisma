@@ -116,6 +116,7 @@ model Project {
   progress    Int           @default(0)
   pinned      Boolean       @default(false)
   color       String?
+  sourceRepo  String?       // "owner/repo" the Copilot reads to propose updates
   startedAt   DateTime?
   shipAt      DateTime?
   createdAt   DateTime      @default(now())
