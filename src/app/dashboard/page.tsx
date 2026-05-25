@@ -6,6 +6,7 @@ import { TasksWidget } from "@/components/dashboard/widgets/tasks-widget";
 import { ShipActivityChart } from "@/components/dashboard/widgets/ship-activity-chart";
 import { NotificationsFeed } from "@/components/dashboard/widgets/notifications-feed";
 import { PeaceOfMindMode } from "@/components/dashboard/widgets/peace-of-mind-mode";
+import { GenerateBriefButton } from "@/components/dashboard/copilot/generate-brief-button";
 
 /**
  * Dashboard overview page.
@@ -24,6 +25,10 @@ export default async function DashboardOverviewPage() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <span className="label-tactical">Daily brief</span>
+        <GenerateBriefButton />
+      </div>
       <WelcomeCard firstName={user.firstName ?? null} summary={summary} />
       <OpsMetricsStrip metrics={opsMetrics} />
 
