@@ -519,3 +519,26 @@ export async function getInboxUnreadCount(): Promise<number> {
     where: { archived: false, readAt: null },
   });
 }
+
+/* ============================================================
+   Project detail — single owned project with all its relations.
+   ============================================================ */
+
+/**
+ * Full detail for one project the current user owns (by slug), including
+ * milestones, roadmap, tasks, and recent deployments. Returns null if the
+ * project doesn't exist or isn't owned by the user (the page 404s on null).
+ */
+export async function getProjectDetail(slug: string) {
+  const userId = await requireUserId();
+
+  return prisma.project.findFirst({
+    where: { slug, userId },
+    include: {
+      milestones: { orderBy: { order: "asc" } },
+      roadmapItems: { orderBy: { order: "asc" } },
+      tasks: { orderBy: [{ status: "asc" }, { dueAt: "asc" }], take: 100 },
+      deployments: { orderBy: { deployedAt: "desc" }, take: 10 },
+    },
+  });
+}

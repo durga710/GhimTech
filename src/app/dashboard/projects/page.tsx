@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { FolderKanban } from "lucide-react";
 import { getProjects } from "@/lib/dashboard/data";
 import { relativeTime } from "@/lib/dashboard/format";
@@ -42,7 +43,11 @@ export default async function ProjectsPage() {
           {projects.map((p) => {
             const meta = STATUS_META[p.status] ?? STATUS_META.active;
             return (
-              <div key={p.id} className="glass-panel p-5 flex flex-col gap-4">
+              <Link
+                key={p.id}
+                href={`/dashboard/projects/${p.slug}`}
+                className="glass-panel p-5 flex flex-col gap-4 hover:border-white/[0.16] transition-colors"
+              >
                 <div className="flex items-start justify-between gap-2">
                   <h2 className="text-base font-medium text-white leading-tight">{p.name}</h2>
                   <span className={cn("shrink-0 px-2 py-0.5 rounded text-[10px] font-medium border", meta.cls)}>
@@ -62,7 +67,7 @@ export default async function ProjectsPage() {
                   <span>{p.taskCount.done}/{p.taskCount.total} tasks done</span>
                   <span>updated {relativeTime(p.updatedAt)}</span>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
