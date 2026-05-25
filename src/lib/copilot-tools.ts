@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { fetchRepoContext } from "@/lib/github";
+import { fetchRepoContext, scanRepoSecrets, openPullRequest } from "@/lib/github";
 
 /**
  * Copilot agent tools. `web_search` is OpenAI's built-in browsing tool
@@ -75,6 +75,36 @@ export const COPILOT_TOOLS = [
       type: "object",
       properties: { slug: { type: "string" } },
       required: ["slug"],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
+  {
+    type: "function" as const,
+    name: "scan_repo_secrets",
+    description: "Scan a project's linked GitHub repo (current files) for leaked secrets/credentials. Returns findings with file + rule (values masked).",
+    parameters: {
+      type: "object",
+      properties: { slug: { type: "string" } },
+      required: ["slug"],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
+  {
+    type: "function" as const,
+    name: "open_pull_request",
+    description: "Open a single-file pull request on a project's linked GitHub repo (e.g., add a CI workflow or doc). Creates a branch + commit + PR for review; never merges.",
+    parameters: {
+      type: "object",
+      properties: {
+        slug: { type: "string" },
+        title: { type: "string" },
+        body: { type: "string" },
+        path: { type: "string", description: "file path in the repo, e.g. .github/workflows/gitleaks.yml" },
+        content: { type: "string", description: "full file contents" },
+      },
+      required: ["slug", "title", "path", "content"],
       additionalProperties: false,
     },
     strict: false,
@@ -164,6 +194,31 @@ export async function executeTool(
         recentCommits: ctx.recentCommits,
       };
     }
+    case "scan_repo_secrets": {
+      const slug = s(args.slug);
+      const p = await prisma.project.findFirst({ where: { slug, userId }, select: { sourceRepo: true } });
+      if (!p?.sourceRepo) return { error: "that project has no linked repo" };
+      const res = await scanRepoSecrets(p.sourceRepo);
+      if (!res) return { error: "couldn't read the repo" };
+      return { repo: p.sourceRepo, scannedFiles: res.scannedFiles, findingCount: res.findings.length, findings: res.findings.slice(0, 40) };
+    }
+    case "open_pull_request": {
+      const slug = s(args.slug);
+      const p = await prisma.project.findFirst({ where: { slug, userId }, select: { sourceRepo: true } });
+      if (!p?.sourceRepo) return { error: "that project has no linked repo" };
+      const path = s(args.path);
+      const content = s(args.content);
+      if (!path || !content) return { error: "path and content are required" };
+      const title = s(args.title).slice(0, 200) || "Copilot change";
+      const branch = `copilot/${Date.now().toString(36)}`;
+      return openPullRequest(p.sourceRepo, {
+        title,
+        body: s(args.body).slice(0, 4000) || title,
+        path,
+        content,
+        branch,
+      });
+    }
     default:
       return { error: `unknown tool: ${name}` };
   }
@@ -187,6 +242,10 @@ export function toolLabel(name: string, result: unknown): string {
       return r.created ? "saved a note" : "tried to save a note";
     case "read_project_repo":
       return r.repo ? `read ${String(r.repo)}` : "tried to read a repo";
+    case "scan_repo_secrets":
+      return r.findingCount !== undefined ? `scanned ${String(r.repo ?? "repo")} — ${String(r.findingCount)} finding(s)` : "scanned a repo";
+    case "open_pull_request":
+      return r.url ? "opened a pull request" : "tried to open a PR";
     default:
       return name;
   }

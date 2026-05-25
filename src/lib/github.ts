@@ -93,3 +93,133 @@ export async function fetchRepoContext(repo: string): Promise<RepoContext | null
     recentCommits,
   };
 }
+
+/* ============================================================
+   Write + scan helpers (used by the agentic Copilot tools)
+   ============================================================ */
+
+async function ghReq(method: string, path: string, body?: unknown): Promise<{ ok: boolean; json: unknown }> {
+  try {
+    const res = await fetch(`${GH_API}${path}`, {
+      method,
+      headers: { ...ghHeaders(), "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: "no-store",
+    });
+    const json = await res.json().catch(() => null);
+    return { ok: res.ok, json };
+  } catch {
+    return { ok: false, json: null };
+  }
+}
+
+export interface SecretFinding {
+  path: string;
+  rule: string;
+  masked: string;
+}
+
+const SECRET_RULES: { rule: string; re: RegExp }[] = [
+  { rule: "AWS access key", re: /AKIA[0-9A-Z]{16}/g },
+  { rule: "Google API key", re: /AIza[0-9A-Za-z_-]{30,}/g },
+  { rule: "OpenAI key", re: /sk-(?:proj|ant)?-?[0-9A-Za-z_-]{20,}/g },
+  { rule: "GitHub token", re: /gh[pousr]_[0-9A-Za-z]{36,}|github_pat_[0-9A-Za-z_]{40,}/g },
+  { rule: "Slack token", re: /xox[baprs]-[0-9A-Za-z-]{10,}/g },
+  { rule: "Private key", re: /-----BEGIN [A-Z ]*PRIVATE KEY-----/g },
+  { rule: "DB connection string", re: /postgres(?:ql)?:\/\/[^:\s]+:[^@\s]+@[^\s"']+/g },
+];
+
+const isPlaceholder = (v: string): boolean =>
+  /(<|>|example|placeholder|redacted|xxx|your[-_]|\*\*\*|dummy|changeme|user:pass)/i.test(v);
+
+/**
+ * Scans the current working tree of a repo (default branch) for secret-like
+ * strings via the GitHub API. Bounded (text files only, capped count) so it
+ * runs inside a serverless function. History scanning needs a full clone (CI).
+ */
+export async function scanRepoSecrets(
+  repo: string,
+  maxFiles = 60,
+): Promise<{ scannedFiles: number; findings: SecretFinding[] } | null> {
+  const meta = await ghJson<{ default_branch?: string }>(`/repos/${repo}`);
+  if (!meta?.default_branch) return null;
+  const tree = await ghJson<{ tree: { path: string; type: string; size?: number }[] }>(
+    `/repos/${repo}/git/trees/${meta.default_branch}?recursive=1`,
+  );
+  if (!tree?.tree) return { scannedFiles: 0, findings: [] };
+
+  const SKIP = /(^|\/)(node_modules|dist|build|\.next|vendor|\.git)\//;
+  const TEXT = /\.(env|ts|tsx|js|jsx|json|md|sh|ya?ml|txt|py|rb|go|java|sql|toml|ini|cfg|conf|tf|properties)$|(^|\/)\.env/;
+  const risky = (p: string) => /\.env|secret|credential|config|\.tfvars/i.test(p);
+
+  const candidates = tree.tree
+    .filter((n) => n.type === "blob" && !SKIP.test(n.path) && TEXT.test(n.path) && (n.size ?? 0) < 200_000)
+    .sort((a, b) => Number(risky(b.path)) - Number(risky(a.path)))
+    .slice(0, maxFiles);
+
+  const findings: SecretFinding[] = [];
+  let scanned = 0;
+  for (const f of candidates) {
+    const content = await fetchFile(repo, f.path);
+    if (content == null) continue;
+    scanned++;
+    for (const { rule, re } of SECRET_RULES) {
+      re.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(content)) !== null) {
+        if (isPlaceholder(m[0])) continue;
+        findings.push({ path: f.path, rule, masked: m[0].slice(0, 10) + "…[redacted]" });
+        if (findings.length >= 60) break;
+      }
+    }
+    if (findings.length >= 60) break;
+  }
+
+  const seen = new Set<string>();
+  const uniq = findings.filter((x) => {
+    const k = `${x.path}|${x.rule}|${x.masked}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  return { scannedFiles: scanned, findings: uniq };
+}
+
+/**
+ * Opens a single-file pull request on a repo: creates a branch off the default
+ * branch, commits the file, and opens a PR. Reviewable — never auto-merged.
+ */
+export async function openPullRequest(
+  repo: string,
+  opts: { title: string; body: string; path: string; content: string; branch: string },
+): Promise<{ url: string } | { error: string }> {
+  const meta = await ghJson<{ default_branch?: string }>(`/repos/${repo}`);
+  if (!meta?.default_branch) return { error: "repo not found or no access" };
+  const base = meta.default_branch;
+
+  const ref = await ghJson<{ object?: { sha: string } }>(`/repos/${repo}/git/ref/heads/${base}`);
+  if (!ref?.object?.sha) return { error: "couldn't read base branch" };
+
+  const branchRes = await ghReq("POST", `/repos/${repo}/git/refs`, {
+    ref: `refs/heads/${opts.branch}`,
+    sha: ref.object.sha,
+  });
+  if (!branchRes.ok) return { error: "couldn't create branch (it may already exist)" };
+
+  const fileRes = await ghReq("PUT", `/repos/${repo}/contents/${opts.path}`, {
+    message: opts.title,
+    content: Buffer.from(opts.content, "utf8").toString("base64"),
+    branch: opts.branch,
+  });
+  if (!fileRes.ok) return { error: "couldn't commit the file" };
+
+  const prRes = await ghReq("POST", `/repos/${repo}/pulls`, {
+    title: opts.title,
+    body: opts.body,
+    head: opts.branch,
+    base,
+  });
+  const prJson = prRes.json as { html_url?: string } | null;
+  if (!prRes.ok || !prJson?.html_url) return { error: "branch + file created, but couldn't open the PR" };
+  return { url: prJson.html_url };
+}
