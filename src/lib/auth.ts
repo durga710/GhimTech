@@ -2,83 +2,121 @@
  * Auth context helpers.
  *
  * Every protected query in the app goes through one of these functions.
- * That's deliberate: security policy lives in ONE place, not scattered
- * across 30 route handlers.
- *
- * Flow:
- *   1. Clerk middleware already gate-checked the route — by the time we
- *      reach a server component or API handler, we know SOME Clerk user
- *      is authenticated. But Clerk identity ≠ our local User row.
- *   2. requireUser() resolves the Clerk userId → our local User. If we
- *      don't have a local row yet, it creates one (lazy-provision).
- *   3. Every Prisma query that filters by user uses the returned User.id.
- *
- * Why lazy-provision a User on demand instead of relying on the webhook?
- * Two reasons:
- *   - The webhook *should* fire on signup, but webhook delivery is async
- *     and can fail. We can't have a UX where the user signs up, lands on
- *     the dashboard, and sees an error because the webhook hasn't run yet.
- *   - Defense in depth: even if the webhook never runs, the user still
- *     gets a working DB row the moment they hit the dashboard.
- *
- * Why is this a Server-only module? Because it reaches into Clerk's auth
- * context, which is only available on the server. Importing this from a
- * client component will throw — by design.
+ * Supabase Auth is the identity source; Prisma owns app data and keeps a
+ * local User row for dashboard relationships.
  */
 
 import "server-only";
-import { auth, currentUser } from "@clerk/nextjs/server";
+
+import type { User as PrismaUser } from "@prisma/client";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import {
+  isAllowedOperatorEmail,
+  normalizeEmail,
+} from "@/lib/auth-policy";
 import { prisma } from "@/lib/prisma";
-import type { User } from "@prisma/client";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-/**
- * Returns the local User row for the currently authenticated Clerk user.
- * Lazy-provisions one if missing. Throws/redirects if unauthenticated.
- *
- * Use this in: server components, server actions, route handlers.
- */
-export async function requireUser(): Promise<User> {
-  const { userId: clerkId } = await auth();
+type UserProfile = {
+  authUserId: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  avatarUrl: string | null;
+};
 
-  if (!clerkId) {
-    // This should be unreachable if middleware is configured correctly,
-    // but defense in depth: if it somehow IS reachable, bounce to sign-in.
-    redirect("/sign-in");
+function metadataString(
+  metadata: SupabaseUser["user_metadata"],
+  key: string
+): string | null {
+  const value = metadata?.[key];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function profileFromAuthUser(authUser: SupabaseUser): UserProfile {
+  const email = normalizeEmail(authUser.email);
+
+  if (!email) {
+    throw new Error("Authenticated Supabase user has no email");
   }
 
-  // Fast path: user already exists locally
-  const existing = await prisma.user.findUnique({
-    where: { clerkId },
-    include: { preferences: true },
+  const fullName =
+    metadataString(authUser.user_metadata, "full_name") ??
+    metadataString(authUser.user_metadata, "name");
+  const [firstFromFull, ...lastFromFull] = fullName?.split(/\s+/) ?? [];
+
+  return {
+    authUserId: authUser.id,
+    email,
+    firstName:
+      metadataString(authUser.user_metadata, "first_name") ??
+      firstFromFull ??
+      null,
+    lastName:
+      metadataString(authUser.user_metadata, "last_name") ??
+      (lastFromFull.length > 0 ? lastFromFull.join(" ") : null),
+    avatarUrl:
+      metadataString(authUser.user_metadata, "avatar_url") ??
+      metadataString(authUser.user_metadata, "picture"),
+  };
+}
+
+async function ensurePreferences(userId: string) {
+  await prisma.userPreferences.upsert({
+    where: { userId },
+    update: {},
+    create: { userId },
+  });
+}
+
+async function ensureLocalUser(authUser: SupabaseUser): Promise<PrismaUser> {
+  const profile = profileFromAuthUser(authUser);
+
+  const existingByAuthId = await prisma.user.findUnique({
+    where: { clerkId: profile.authUserId },
   });
 
-  if (existing) return existing;
+  if (existingByAuthId) {
+    await ensurePreferences(existingByAuthId.id);
 
-  // Lazy-provision: first time this Clerk user hits the dashboard,
-  // create their local row. Pull the email + name from Clerk.
-  const clerkUser = await currentUser();
-  if (!clerkUser) redirect("/sign-in");
-
-  const primaryEmail = clerkUser.emailAddresses.find(
-    (e) => e.id === clerkUser.primaryEmailAddressId
-  )?.emailAddress;
-
-  if (!primaryEmail) {
-    // Should never happen — Clerk always has at least one email.
-    throw new Error("Clerk user has no primary email");
+    return prisma.user.update({
+      where: { id: existingByAuthId.id },
+      data: {
+        email: profile.email,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        avatarUrl: profile.avatarUrl,
+      },
+    });
   }
 
-  // Create user + preferences in a transaction so we never leave the
-  // user without preferences.
-  const created = await prisma.$transaction(async (tx) => {
+  const existingByEmail = await prisma.user.findUnique({
+    where: { email: profile.email },
+  });
+
+  if (existingByEmail) {
+    await ensurePreferences(existingByEmail.id);
+
+    return prisma.user.update({
+      where: { id: existingByEmail.id },
+      data: {
+        clerkId: profile.authUserId,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        avatarUrl: profile.avatarUrl,
+      },
+    });
+  }
+
+  return prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
       data: {
-        clerkId,
-        email: primaryEmail,
-        firstName: clerkUser.firstName,
-        lastName: clerkUser.lastName,
-        avatarUrl: clerkUser.imageUrl,
+        clerkId: profile.authUserId,
+        email: profile.email,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        avatarUrl: profile.avatarUrl,
       },
     });
 
@@ -88,8 +126,49 @@ export async function requireUser(): Promise<User> {
 
     return user;
   });
+}
 
-  return created;
+async function getAuthenticatedSupabaseUser(): Promise<SupabaseUser | null> {
+  let supabase;
+
+  try {
+    supabase = await createSupabaseServerClient();
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("Supabase Auth")) {
+      redirect("/sign-in?error=supabase-env-missing");
+    }
+    throw error;
+  }
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) return null;
+
+  if (!isAllowedOperatorEmail(user.email)) {
+    await supabase.auth.signOut();
+    redirect("/sign-in?error=not-allowed");
+  }
+
+  return user;
+}
+
+/**
+ * Returns the local User row for the currently authenticated Supabase user.
+ * Lazy-provisions one if missing. Throws/redirects if unauthenticated.
+ *
+ * Use this in: server components, server actions, route handlers.
+ */
+export async function requireUser(): Promise<PrismaUser> {
+  const authUser = await getAuthenticatedSupabaseUser();
+
+  if (!authUser) {
+    redirect("/sign-in");
+  }
+
+  return ensureLocalUser(authUser);
 }
 
 /**
@@ -106,12 +185,27 @@ export async function requireUserId(): Promise<string> {
  * Use in routes that need to know "is anyone logged in?" without forcing
  * a redirect (e.g. public pages with personalization).
  */
-export async function getOptionalUser(): Promise<User | null> {
-  const { userId: clerkId } = await auth();
-  if (!clerkId) return null;
+export async function getOptionalUser(): Promise<PrismaUser | null> {
+  let supabase;
 
-  return prisma.user.findUnique({
-    where: { clerkId },
-    include: { preferences: true },
+  try {
+    supabase = await createSupabaseServerClient();
+  } catch {
+    return null;
+  }
+
+  const {
+    data: { user: authUser },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !authUser || !isAllowedOperatorEmail(authUser.email)) return null;
+
+  const email = normalizeEmail(authUser.email);
+
+  return prisma.user.findFirst({
+    where: {
+      OR: [{ clerkId: authUser.id }, { email }],
+    },
   });
 }

@@ -1,29 +1,44 @@
-import { SignIn } from "@clerk/nextjs";
 import Link from "next/link";
+import { signInWithPasswordAction } from "@/app/auth/actions";
 import { Logo } from "@/components/shared/logo";
+import { safeRedirectPath } from "@/lib/auth-policy";
 
-/**
- * Sign-in page.
- *
- * Clerk handles all the actual auth — we just theme it to fit the site.
- * The `appearance` prop tokens are designed to mirror the carbon-glass
- * aesthetic exactly, so the auth surface feels native instead of a
- * 3rd-party widget dropped in.
- */
-export default function SignInPage() {
+type AuthSearchParams = Promise<{
+  error?: string | string[];
+  message?: string | string[];
+  next?: string | string[];
+}>;
+
+const errorMessages: Record<string, string> = {
+  "invalid-credentials": "Email or password is incorrect.",
+  "not-allowed": "That email is not approved for the dashboard.",
+  "supabase-env-missing": "Supabase Auth is not configured yet.",
+};
+
+const messageMessages: Record<string, string> = {
+  "check-email": "Check your email to finish enrollment.",
+};
+
+function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: AuthSearchParams;
+}) {
+  const params = await searchParams;
+  const nextPath = safeRedirectPath(firstParam(params.next));
+  const error = firstParam(params.error);
+  const message = firstParam(params.message);
+
   return (
     <main className="relative min-h-screen flex flex-col items-center justify-center px-6 py-12">
-      {/* Ambient backdrop — keeps the auth screen visually consistent */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10"
-      >
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
         <div className="absolute inset-0 bg-carbon-grid bg-grid-md opacity-30" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[800px] rounded-full
-                        bg-[radial-gradient(circle,rgba(58,164,255,0.12),transparent_70%)] blur-3xl" />
       </div>
 
-      {/* Canonical Ghimtech lockup */}
       <Link
         href="/"
         aria-label="Ghimtech home"
@@ -34,53 +49,71 @@ export default function SignInPage() {
 
       <p className="mb-8 label-tactical">Operator sign-in · restricted access</p>
 
-      <SignIn
-        appearance={{
-          variables: {
-            colorPrimary: "#3aa4ff",
-            colorBackground: "rgba(15,18,24,0.6)",
-            colorInputBackground: "rgba(7,8,12,0.6)",
-            colorInputText: "#f4f6fa",
-            colorText: "#f4f6fa",
-            colorTextSecondary: "#a1a1aa",
-            colorNeutral: "#f4f6fa",
-            colorDanger: "#ff5470",
-            colorSuccess: "#1fe294",
-            colorWarning: "#ffa726",
-            fontFamily: "Geist, system-ui, sans-serif",
-            borderRadius: "12px",
-          },
-          elements: {
-            rootBox: "w-full max-w-md",
-            card:
-              "bg-ink-900/60 backdrop-blur-xl border border-white/[0.08] shadow-[0_40px_80px_-40px_rgba(0,0,0,0.9)]",
-            headerTitle: "font-display text-white",
-            headerSubtitle: "text-zinc-400",
-            socialButtonsBlockButton:
-              "bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-white",
-            formButtonPrimary:
-              "bg-gradient-to-b from-signal-300 to-signal-500 hover:from-signal-200 hover:to-signal-400 text-white shadow-[0_0_40px_-10px_rgba(58,164,255,0.45)] font-medium",
-            footerActionLink: "text-signal-300 hover:text-signal-200",
-            formFieldInput:
-              "bg-ink-950/60 border border-white/[0.08] text-white focus:border-signal-400/50",
-            identityPreviewEditButton: "text-signal-300",
-            dividerLine: "bg-white/[0.06]",
-            dividerText: "text-zinc-500",
-            footer: "hidden", // hide the Clerk-branded footer
-          },
-        }}
-        path="/sign-in"
-        routing="path"
-        signUpUrl="/sign-up"
-        forceRedirectUrl="/dashboard"
-      />
+      <form action={signInWithPasswordAction} className="glass-panel-strong w-full max-w-md p-6">
+        <input type="hidden" name="next" value={nextPath} />
 
-      <Link
-        href="/"
-        className="mt-8 font-mono text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-      >
-        ← back to site
-      </Link>
+        <div className="space-y-2">
+          <h1 className="text-2xl text-white">Command Center</h1>
+          <p className="text-sm text-zinc-400">Sign in with your approved operator account.</p>
+        </div>
+
+        {error && errorMessages[error] ? (
+          <p className="mt-5 rounded-lg border border-flare-400/25 bg-flare-400/10 px-3 py-2 text-sm text-flare-200">
+            {errorMessages[error]}
+          </p>
+        ) : null}
+
+        {message && messageMessages[message] ? (
+          <p className="mt-5 rounded-lg border border-vital-400/25 bg-vital-400/10 px-3 py-2 text-sm text-vital-200">
+            {messageMessages[message]}
+          </p>
+        ) : null}
+
+        <div className="mt-6 space-y-4">
+          <label className="block space-y-2">
+            <span className="label-tactical">Email</span>
+            <input
+              required
+              autoComplete="email"
+              inputMode="email"
+              name="email"
+              type="email"
+              className="w-full rounded-lg border border-white/[0.08] bg-ink-950/60 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-signal-400/50"
+              placeholder="you@example.com"
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="label-tactical">Password</span>
+            <input
+              required
+              autoComplete="current-password"
+              minLength={8}
+              maxLength={128}
+              name="password"
+              type="password"
+              className="w-full rounded-lg border border-white/[0.08] bg-ink-950/60 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-signal-400/50"
+              placeholder="8 characters minimum"
+            />
+          </label>
+        </div>
+
+        <button type="submit" className="btn-signal mt-6 w-full rounded-lg">
+          Sign in
+        </button>
+
+        <div className="mt-5 flex items-center justify-between text-xs">
+          <Link href="/" className="font-mono text-zinc-500 hover:text-zinc-300 transition-colors">
+            Back to site
+          </Link>
+          <Link
+            href={`/sign-up?next=${encodeURIComponent(nextPath)}`}
+            className="font-mono text-signal-300 hover:text-signal-200 transition-colors"
+          >
+            Create account
+          </Link>
+        </div>
+      </form>
     </main>
   );
 }

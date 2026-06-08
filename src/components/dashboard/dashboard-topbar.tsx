@@ -1,9 +1,9 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
 import { motion } from "framer-motion";
-import { Search, Bell, Command } from "lucide-react";
+import { Bell, Command, LogOut, Search } from "lucide-react";
 import { useEffect, useState } from "react";
+import { signOutAction } from "@/app/auth/actions";
 
 /**
  * Dashboard top bar.
@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
  * sidebar takes the left rail). Contains:
  *   - Search field with ⌘K hint
  *   - Notifications bell with unread indicator
- *   - Clerk UserButton (handles all session UI)
+ *   - App-owned sign-out control
  *
  * The command palette itself is a Phase 7 polish item — this just shows
  * the trigger so the muscle memory is built early.
@@ -77,26 +77,19 @@ export function DashboardTopbar() {
           <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-flare-400 animate-pulse-vital" />
         </button>
 
-        {/* User */}
-        <UserButton
-          appearance={{
-            elements: {
-              userButtonAvatarBox: "h-9 w-9 ring-1 ring-white/10",
-              userButtonPopoverCard:
-                "bg-ink-900/95 backdrop-blur-xl border border-white/[0.08]",
-              userButtonPopoverActionButton: "text-zinc-300 hover:text-white",
-              userButtonPopoverActionButtonText: "text-current",
-            },
-            variables: {
-              colorPrimary: "#3aa4ff",
-              colorBackground: "rgba(7,8,12,0.95)",
-              colorText: "#f4f6fa",
-              colorTextSecondary: "#a1a1aa",
-              fontFamily: "Geist, system-ui, sans-serif",
-            },
-          }}
-          afterSignOutUrl="/"
-        />
+        {/* Sign out */}
+        <form action={signOutAction}>
+          <button
+            type="submit"
+            aria-label="Sign out"
+            title="Sign out"
+            className="grid h-9 w-9 place-items-center rounded-lg
+                       bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12]
+                       text-zinc-400 hover:text-white transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </form>
       </div>
     </motion.header>
   );

@@ -84,7 +84,7 @@ Phases shipped:
 - Phase 1: Design system, layout shell, landing page
 - Phase 2: About + Experience timeline
 - Phase 3: Projects (RayHealthEVV deep-dive) + Contact
-- Phase 4: Clerk auth + Dashboard widgets
+- Phase 4: Supabase Auth + Dashboard widgets
 - Phase 5: Real DB (Prisma+Supabase), 11 API endpoints,
   audit logging, rate limiting, single-operator security
 - Brand: canonical mark + lockup + wordmark, applied site-wide" || echo "(nothing new to commit)"
@@ -100,10 +100,10 @@ echo ""
 echo "  Next steps:"
 echo "    1. Visit https://github.com/durga710/GhimTech to confirm"
 echo "    2. cp .env.example .env.local"
-echo "    3. Fill Supabase + Clerk values"
+echo "    3. Fill Supabase Auth + database values"
 echo "    4. npm install"
 echo "    5. npm run db:push"
-echo "    6. npm run dev → sign up → grab Clerk user_id"
-echo "    7. SEED_CLERK_ID=user_xxx npm run db:seed"
+echo "    6. npm run dev -> sign up -> grab Supabase Auth user id"
+echo "    7. SEED_AUTH_USER_ID=uuid npm run db:seed"
 echo "    8. Deploy to Vercel, point ghimtech.org at it"
 echo ""

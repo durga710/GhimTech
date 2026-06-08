@@ -20,15 +20,12 @@ After pushing, the rest of the setup is:
 
 ```bash
 npm install
-cp .env.example .env.local           # Then fill in Supabase + Clerk
+cp .env.example .env.local           # Then fill in Supabase Auth + database values
 npm run db:push                       # Create tables in Supabase
 npm run dev                           # Start dev server
 
-# Sign up once at /sign-up, copy your Clerk user_id from the Clerk dashboard
-SEED_CLERK_ID=user_xxx npm run db:seed   # Populates the dashboard
-
-# Then in Clerk: User & Authentication → Restrictions → Restrict sign-ups → ON
-#   (locks the door behind you so nobody else can sign up)
+# Sign up once at /sign-up, copy your Supabase Auth user id
+SEED_AUTH_USER_ID=uuid npm run db:seed   # Populates the dashboard
 ```
 
 See [DEPLOY.md](./DEPLOY.md) for the full deployment walkthrough including Vercel + ghimtech.org DNS.
@@ -61,10 +58,9 @@ Everything is yours. No multi-tenancy. No client-facing surface inside the dashb
 
 - **Next.js 15** App Router + TypeScript + Tailwind
 - **Framer Motion** for animation
-- **Clerk** for authentication (webhook-synced to local User row)
+- **Supabase Auth** for restricted dashboard authentication
 - **Prisma** ORM against **Supabase Postgres**
 - **Zod** for input validation across every API route
-- **svix** for webhook signature verification
 - Deployed on **Vercel**
 
 ---
@@ -74,7 +70,7 @@ Everything is yours. No multi-tenancy. No client-facing surface inside the dashb
 - **Phase 1 ✓** — Design system, layout shell, landing page
 - **Phase 2 ✓** — About + Experience pages with animated timeline
 - **Phase 3 ✓** — Projects deep-dive (RayHealthEVV) + Contact
-- **Phase 4 ✓** — Clerk auth + Dashboard widgets (UI)
+- **Phase 4 ✓** — Supabase Auth + Dashboard widgets (UI)
 - **Phase 5 ✓** — **Real DB, real APIs, real security wired end-to-end**
 - **Phase 6 ✓** — **Brand system: mark, lockup, OG image, favicon, manifest**
 - **Phase 7** — Admin views (audit log, contact inbox), AI brief generator
@@ -86,8 +82,8 @@ Everything is yours. No multi-tenancy. No client-facing surface inside the dashb
 
 **Auth flow**
 
-1. Clerk middleware (`src/middleware.ts`) gates every `/dashboard` and `/api/*` route except public contact + Clerk webhook
-2. Inside protected handlers, `requireUser()` resolves the Clerk user → local User row (lazy-provisions if missing)
+1. Supabase middleware (`src/middleware.ts`) refreshes SSR auth cookies and gates `/dashboard`, `/admin`, and `/api/private`
+2. Inside protected handlers, `requireUser()` validates the Supabase user with `getUser()` and resolves it to a local User row
 3. Every Prisma query filters by `userId` — no cross-user data leakage possible
 4. Every write hits the audit log via `audit({...})`
 
@@ -97,11 +93,6 @@ Everything is yours. No multi-tenancy. No client-facing surface inside the dashb
 - Authenticated writes: 30–200 ops/hour per user depending on endpoint
 - In-memory limiter; upgrade path to Upstash Redis documented in `src/lib/rate-limit.ts`
 
-**Webhook verification**
-
-- Clerk webhooks verified with svix signatures before any DB write
-- `CLERK_WEBHOOK_SECRET` required in env; route refuses to run without it
-
 **Ownership enforcement**
 
 - Single-resource endpoints (e.g. `/api/projects/[id]`) always look up the row, then check `row.userId === user.id`
@@ -110,7 +101,7 @@ Everything is yours. No multi-tenancy. No client-facing surface inside the dashb
 
 **Sensitive data**
 
-- All Clerk secrets, DB URLs, webhook secrets marked sensitive in Vercel env
+- Database URLs and server-only secrets marked sensitive in Vercel env
 - Audit log captures IP + user-agent on every write
 - DB cascades wipe child rows on User deletion (right-to-be-forgotten ready)
 
@@ -132,7 +123,6 @@ All authenticated endpoints. JSON envelopes: `{ ok: true, data: {...} }` or `{ o
 | `/api/notifications/[id]` | PATCH, DELETE | Read/unread, dismiss |
 | `/api/preferences` | GET, PATCH | User preferences (Peace of Mind, density, etc.) |
 | `/api/contact` | POST | **Public.** Rate-limited contact form |
-| `/api/webhooks/clerk` | POST | **Public, signed.** Clerk user sync |
 
 ---
 
@@ -147,7 +137,7 @@ src/
   app/
     api/                 — REST endpoints (see API surface table)
     dashboard/           — Protected Command Center
-    sign-in/, sign-up/   — Clerk auth pages (branded)
+    sign-in/, sign-up/   — Supabase Auth forms
     (public)/            — Landing, about, experience, projects, contact
   components/
     dashboard/           — Sidebar, topbar, 7 widgets
@@ -164,7 +154,7 @@ src/
     validation.ts        — Zod schemas (shared)
     prisma.ts            — Prisma client singleton
     dashboard/data.ts    — Server-side query orchestrator
-  middleware.ts          — Clerk route gating
+  middleware.ts          — Supabase Auth route gating
 
 prisma/
   schema.prisma          — Data model (14 models, single-operator)

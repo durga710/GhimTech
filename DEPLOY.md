@@ -8,7 +8,6 @@ End-to-end setup for the founder operating system. Production target: **ghimtech
 
 - Node.js 20+
 - A Supabase account ([supabase.com](https://supabase.com)) — free tier is fine
-- A Clerk account ([clerk.com](https://clerk.com)) — free tier is fine
 - A Vercel account for production deploy
 
 ---
@@ -25,28 +24,19 @@ End-to-end setup for the founder operating system. Production target: **ghimtech
 
 ---
 
-## 3. Auth setup (Clerk)
+## 3. Auth setup (Supabase)
 
-1. Create a new Clerk application. Choose **Email + Password** + any social you want.
-2. From **API Keys**, copy:
-   - Publishable key → `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
-   - Secret key → `CLERK_SECRET_KEY`
-3. From **Webhooks** → **Add Endpoint**:
-   - URL: `https://ghimtech.org/api/webhooks/clerk` (production)
-     - For local dev, use [ngrok](https://ngrok.com) or [Cloudflare Tunnel] to expose `http://localhost:3000` and use that URL temporarily.
-   - Events: `user.created`, `user.updated`, `user.deleted`
-   - Copy the **Signing Secret** → `CLERK_WEBHOOK_SECRET`
+1. In Supabase dashboard -> **Authentication -> Providers**, enable Email.
+2. From **Project Settings -> API**, copy:
+   - Project URL -> `NEXT_PUBLIC_SUPABASE_URL`
+   - Anon/public key -> `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. Set `AUTH_ALLOWED_EMAIL` to the one email allowed to use the dashboard.
 
-### Restricting sign-ups
+### Restricting access
 
 This is a personal command center, not a public service. After your account
-exists, lock the door behind you:
-
-1. Clerk dashboard → **User & Authentication → Restrictions**
-2. Enable **Restrict sign-ups**
-3. Optionally add your email to **Allowed sign-up emails**
-
-This prevents anyone else from creating an account.
+exists, the app still enforces `AUTH_ALLOWED_EMAIL` on sign-up, sign-in,
+middleware, and `requireUser()`.
 
 ---
 
@@ -69,13 +59,13 @@ npm run db:studio     # Opens Prisma Studio in a browser
 
 ## 5. Seed your data (one-time)
 
-The seed needs your real Clerk user ID. The flow:
+The seed needs your real Supabase Auth user ID. The flow:
 
 1. Run `npm run dev` and sign up at `http://localhost:3000/sign-up`
-2. Go to Clerk dashboard → **Users** → find yourself → copy the User ID (starts with `user_`)
+2. Go to Supabase dashboard -> **Authentication -> Users** -> find yourself -> copy the user ID
 3. Add it to `.env.local`:
    ```
-   SEED_CLERK_ID=user_2abc...
+   SEED_AUTH_USER_ID=uuid-from-supabase
    ```
 4. Run:
    ```bash
@@ -109,19 +99,18 @@ Visit `http://localhost:3000`:
 1. Push to GitHub.
 2. Import in Vercel → connect the GitHub repo.
 3. In Vercel project settings → **Environment Variables**, add EVERYTHING from `.env.local` except `SEED_*` vars.
-   - Use **Production** scope for the real `DATABASE_URL` / `DIRECT_URL` / Clerk keys.
-   - **Important:** mark `CLERK_SECRET_KEY`, `CLERK_WEBHOOK_SECRET`, and `DATABASE_URL` / `DIRECT_URL` as **Sensitive**.
+   - Use **Production** scope for the real `DATABASE_URL`, `DIRECT_URL`, Supabase URL/key, and `AUTH_ALLOWED_EMAIL`.
+   - **Important:** mark `DATABASE_URL` / `DIRECT_URL` and any server-only keys as **Sensitive**.
 4. Deploy. Vercel runs `prisma generate && next build` automatically (see package.json).
-5. Update the Clerk webhook URL from your ngrok URL to `https://ghimtech.org/api/webhooks/clerk`.
-6. Configure custom domain: Vercel → **Domains** → add `ghimtech.org` and `www.ghimtech.org`. Vercel will give you DNS records to add at your registrar.
+5. Configure custom domain: Vercel → **Domains** → add `ghimtech.org` and `www.ghimtech.org`. Vercel will give you DNS records to add at your registrar.
 
 ---
 
 ## 8. Security checklist before going live
 
-- [ ] Clerk **Restrict sign-ups** enabled (only you can sign up)
-- [ ] Webhook secret is set in production env vars
-- [ ] All Clerk keys + DB URLs marked sensitive in Vercel
+- [ ] `AUTH_ALLOWED_EMAIL` set to the one approved operator email
+- [ ] Supabase Auth email provider enabled
+- [ ] Database URLs and server-only env vars marked sensitive in Vercel
 - [ ] Supabase **Row-Level Security**: not currently required because we go through Prisma with explicit `userId` filters; ALL writes/reads use `requireUser()`. But if you ever expose tables directly to a Supabase client (mobile app, etc.), enable RLS first.
 - [ ] Verified the `/api/contact` rate limiter works (try 6 submissions in a row — 6th should 429)
 - [ ] Test sign-out flow — confirms session ends and `/dashboard` bounces to `/sign-in`
@@ -157,9 +146,8 @@ src/
       preferences/       — get / patch user prefs
       projects/          — CRUD + GET/PATCH/DELETE by id
       tasks/             — CRUD + auto-analytics on completion
-      webhooks/clerk/    — Clerk user sync (svix-verified)
     dashboard/           — protected command center
-    sign-in/, sign-up/   — Clerk-hosted auth pages
+    sign-in/, sign-up/   — Supabase Auth forms
     (public pages)
   components/            — UI components
   lib/
@@ -170,7 +158,7 @@ src/
     validation.ts        — Zod schemas
     prisma.ts            — Prisma client singleton
     dashboard/data.ts    — server-side query orchestrator
-  middleware.ts          — Clerk route protection
+  middleware.ts          — Supabase Auth route protection
 prisma/
   schema.prisma          — data model
   seed.ts                — initial data

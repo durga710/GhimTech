@@ -9,12 +9,12 @@
  * Behavior:
  *   - Idempotent: re-running won't duplicate. We delete-then-recreate for
  *     simplicity (acceptable for a single-operator dev tool).
- *   - Requires a real Clerk user to exist first. The script looks for an
- *     env var SEED_CLERK_ID; if not set, it bails with a helpful error.
- *     This is intentional — we never want to seed against a fake clerkId.
+ *   - Requires a real Supabase Auth user to exist first. The script looks
+ *     for SEED_AUTH_USER_ID; if not set, it bails with a helpful error.
+ *     This is intentional — we never want to seed against a fake auth id.
  *
  * Order of operations:
- *   1. Verify Clerk ID provided
+ *   1. Verify auth user ID provided
  *   2. Upsert the User row
  *   3. Wipe + re-create projects, tasks, notifications, summaries, analytics
  */
@@ -24,29 +24,29 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  const clerkId = process.env.SEED_CLERK_ID;
+  const authUserId = process.env.SEED_AUTH_USER_ID;
   const seedEmail = process.env.SEED_EMAIL ?? "durga@rayhealthevv.com";
   const seedFirstName = process.env.SEED_FIRST_NAME ?? "Durga";
   const seedLastName = process.env.SEED_LAST_NAME ?? "Ghimeray";
 
-  if (!clerkId) {
+  if (!authUserId) {
     console.error(
-      "\n[seed] ERROR: SEED_CLERK_ID environment variable is required.\n" +
-        "Sign up via /sign-up first, then copy your Clerk user_id (visible\n" +
-        "in the Clerk dashboard under Users) and re-run with:\n\n" +
-        "  SEED_CLERK_ID=user_xxx npm run db:seed\n"
+      "\n[seed] ERROR: SEED_AUTH_USER_ID environment variable is required.\n" +
+        "Sign up via /sign-up first, then copy your Supabase Auth user ID\n" +
+        "from Supabase Auth > Users and re-run with:\n\n" +
+        "  SEED_AUTH_USER_ID=uuid-from-supabase npm run db:seed\n"
     );
     process.exit(1);
   }
 
-  console.log(`[seed] Seeding data for clerkId=${clerkId}…`);
+  console.log(`[seed] Seeding data for authUserId=${authUserId}...`);
 
   // ============ User ============
   const user = await prisma.user.upsert({
-    where: { clerkId },
+    where: { clerkId: authUserId },
     update: { email: seedEmail, firstName: seedFirstName, lastName: seedLastName },
     create: {
-      clerkId,
+      clerkId: authUserId,
       email: seedEmail,
       firstName: seedFirstName,
       lastName: seedLastName,

@@ -81,7 +81,7 @@ export function rateLimit(
 /**
  * Helper: derive a stable rate-limit key from a request.
  * Strategy:
- *   - Authenticated requests: keyed by Clerk userId (per-user limit)
+ *   - Authenticated requests: keyed by app userId (per-user limit)
  *   - Anonymous requests: keyed by IP (per-IP limit)
  *
  * For IP we trust x-forwarded-for since we're behind Vercel/Cloudflare

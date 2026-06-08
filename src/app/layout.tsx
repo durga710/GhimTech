@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
 import { FOUNDER } from "@/lib/content";
 import "./globals.css";
 
@@ -79,28 +78,19 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider
-      appearance={{
-        variables: {
-          colorPrimary: "#3aa4ff",
-          fontFamily: "var(--font-sans), system-ui, sans-serif",
-        },
-      }}
+    <html
+      lang="en"
+      className={`${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable} dark`}
+      suppressHydrationWarning
     >
-      <html
-        lang="en"
-        className={`${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable} dark`}
-        suppressHydrationWarning
-      >
-        <body className="font-sans">
-          {/* Ambient atmosphere — fixed, never scrolls */}
-          <div
-            aria-hidden
-            className="pointer-events-none fixed inset-0 -z-10 bg-noise opacity-[0.35] mix-blend-overlay"
-          />
-          {children}
-        </body>
-      </html>
-    </ClerkProvider>
+      <body className="font-sans">
+        {/* Ambient atmosphere — fixed, never scrolls */}
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 -z-10 bg-noise opacity-[0.35] mix-blend-overlay"
+        />
+        {children}
+      </body>
+    </html>
   );
 }

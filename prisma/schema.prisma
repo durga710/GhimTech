@@ -2,9 +2,9 @@
 // Ghimtech / Durga OS — Prisma schema
 //
 // Single-operator design. There is ONE user (Durga, the founder).
-// Clerk is the source of truth for identity; we mirror clerkId
-// so foreign keys to local entities work and we don't have to
-// hit Clerk's API every time we want to know "whose task is this".
+// Supabase Auth is the source of truth for identity. The legacy-named
+// clerkId column stores the external auth user id until a later migration
+// can rename it without risking production data.
 //
 // Postgres via Supabase. Designed for the founder OS:
 //   - personal projects, tasks, notes

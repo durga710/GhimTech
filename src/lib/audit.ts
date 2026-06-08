@@ -4,7 +4,7 @@
  * Every write API records what happened. Even though there's only one
  * operator (Durga), this matters because:
  *
- *   - If the Clerk account is ever compromised, you can forensically
+ *   - If the operator account is ever compromised, you can forensically
  *     reconstruct what an attacker did from this table.
  *   - It's the foundation for the "Activity" surface in the dashboard
  *     (what did I do this week?).
