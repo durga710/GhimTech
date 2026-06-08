@@ -204,7 +204,7 @@ export function ContactForm() {
                 >
                   <Check className="h-4 w-4 mt-0.5 shrink-0" />
                   <div className="text-sm leading-relaxed">
-                    <strong className="text-white">Sent.</strong> Thanks for writing. I'll
+                    <strong className="text-white">Sent.</strong> Thanks for writing. I&apos;ll
                     get back to you within a day or two.
                   </div>
                 </motion.div>

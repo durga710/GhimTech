@@ -306,7 +306,7 @@ function VisualAICopilot({ color }: { color: string }) {
         >
           <div className="text-[10px] font-mono text-zinc-500 mb-1">PROMPT</div>
           <div className="text-sm text-zinc-200">
-            Reassign Tuesday's morning visits for the West cluster
+            Reassign Tuesday&apos;s morning visits for the West cluster
           </div>
         </motion.div>
 

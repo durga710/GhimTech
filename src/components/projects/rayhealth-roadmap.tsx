@@ -62,7 +62,7 @@ export function RayHealthRoadmap() {
           eyebrow="Roadmap · quarterly horizon"
           title={
             <>
-              Where it's <span className="text-gradient-signal">going</span>.
+              Where it&apos;s <span className="text-gradient-signal">going</span>.
             </>
           }
           sub="Now → next → horizon → vision. Status is honest: in-progress means in-progress, exploring means exploring."

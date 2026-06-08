@@ -39,7 +39,7 @@ export function ContactIntro() {
             variants={fadeUp}
             className="mt-8 text-xl text-zinc-300 leading-relaxed max-w-2xl"
           >
-            Whether you're a homecare agency curious about RayHealth, someone working
+            Whether you&apos;re a homecare agency curious about RayHealth, someone working
             on something interesting, or just want to say hi — the form below is the
             fastest way to reach me. I read every one.
           </motion.p>

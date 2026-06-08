@@ -87,7 +87,7 @@ export function WelcomeCard({ firstName, summary }: WelcomeCardProps) {
                 <Sparkles className="h-3.5 w-3.5 text-signal-300" />
               </div>
               <span className="label-tactical text-signal-300">
-                Today's highlights
+                Today&apos;s highlights
               </span>
             </div>
 

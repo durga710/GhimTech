@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import {
   Bell,
-  CheckCircle2,
   AlertTriangle,
   Info,
   Sparkles,

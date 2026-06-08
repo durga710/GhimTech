@@ -24,7 +24,6 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { requireUser, requireUserId } from "@/lib/auth";
 import { relativeTime, dueLabel } from "./format";
-import type { Prisma } from "@prisma/client";
 
 /* ============================================================
    Types — what the widgets consume
@@ -193,6 +192,11 @@ export async function getTasks(): Promise<DashTask[]> {
   };
 
   return tasks
+    .sort(
+      (a, b) =>
+        (priorityOrder[a.priority] ?? 99) - (priorityOrder[b.priority] ?? 99)
+    )
+    .slice(0, 10)
     .map((t) => ({
       id: t.id,
       title: t.title,
@@ -201,12 +205,7 @@ export async function getTasks(): Promise<DashTask[]> {
       priority: TASK_PRIORITY_MAP[t.priority] ?? "medium",
       status: TASK_STATUS_MAP[t.status] ?? "todo",
       dueDate: t.dueAt?.toISOString() ?? null,
-      // Internal sort key (not in returned interface)
-      _po: priorityOrder[t.priority] ?? 99,
-    }))
-    .sort((a, b) => a._po - b._po)
-    .slice(0, 10)
-    .map(({ _po, ...rest }) => rest);
+    }));
 }
 
 export async function getNotifications(): Promise<DashNotification[]> {
