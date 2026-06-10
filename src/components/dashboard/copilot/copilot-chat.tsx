@@ -23,7 +23,7 @@ interface Msg {
 
 const STARTERS = [
   "What should I focus on today?",
-  "Create a high-priority task to finish the pen-test review",
+  "Build me a small landing page app and open a PR with the code",
   "Search the web for the latest PA Sandata EVV requirements",
   "What's happening in RayHealthEVV's repo right now?",
 ];

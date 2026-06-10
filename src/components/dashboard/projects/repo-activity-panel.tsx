@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { GitBranch, GitCommitHorizontal, GitPullRequest, CircleDot, Loader2, Star, Pencil } from "lucide-react";
+import { GitBranch, GitCommitHorizontal, GitPullRequest, CircleDot, Code2, Loader2, Star, Pencil, Rocket } from "lucide-react";
 import { relativeTime } from "@/lib/dashboard/format";
 
 interface RepoActivity {
@@ -14,9 +15,22 @@ interface RepoActivity {
   commits: { sha: string; message: string; author: string | null; date: string | null; url: string }[];
   pullRequests: { number: number; title: string; author: string | null; draft: boolean; updatedAt: string; url: string }[];
   issues: { number: number; title: string; updatedAt: string; url: string }[];
+  deployments: { environment: string; state: string; url: string | null; createdAt: string }[];
 }
 
+const DEPLOY_STATE_CLS: Record<string, string> = {
+  success: "text-vital-300",
+  failure: "text-flare-200",
+  error: "text-flare-200",
+  pending: "text-zinc-400",
+  in_progress: "text-zinc-400",
+};
+
 const REFRESH_MS = 60_000;
+
+function cnDeploy(state: string): string {
+  return `font-mono text-[10px] shrink-0 ${DEPLOY_STATE_CLS[state] ?? "text-zinc-400"}`;
+}
 
 /**
  * Live GitHub activity for a project. Polls the API (which reads GitHub
@@ -168,6 +182,12 @@ export function RepoActivityPanel({ projectId, repo: initialRepo }: { projectId:
         >
           <Pencil className="h-3 w-3" />
         </button>
+        <Link
+          href={`/dashboard/code?repo=${encodeURIComponent(repo)}`}
+          className="inline-flex items-center gap-1 font-mono text-[11px] text-zinc-500 hover:text-signal-300 transition-colors"
+        >
+          <Code2 className="h-3 w-3" /> edit code
+        </Link>
         <span className="ml-auto flex items-center gap-1.5 font-mono text-[10px] text-zinc-600">
           {loading ? (
             <Loader2 className="h-3 w-3 animate-spin" />
@@ -257,6 +277,34 @@ export function RepoActivityPanel({ projectId, repo: initialRepo }: { projectId:
                   </ul>
                 )}
               </div>
+
+              {activity.deployments.length > 0 && (
+                <div>
+                  <h3 className="font-mono text-[10px] uppercase tracking-wider text-zinc-600 mb-2">Deployments</h3>
+                  <ul className="space-y-1.5">
+                    {activity.deployments.slice(0, 3).map((d, i) => (
+                      <li key={i} className="flex items-baseline gap-2 text-sm min-w-0">
+                        <Rocket className="h-3 w-3 text-zinc-600 shrink-0 self-center" />
+                        <span className="text-zinc-300 truncate">{d.environment}</span>
+                        <span className={cnDeploy(d.state)}>{d.state}</span>
+                        {d.url && (
+                          <a
+                            href={d.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-mono text-[10px] text-signal-300 hover:text-signal-200 transition-colors shrink-0"
+                          >
+                            open
+                          </a>
+                        )}
+                        <span className="ml-auto font-mono text-[10px] text-zinc-600 shrink-0">
+                          {relativeTime(d.createdAt)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <div>
                 <h3 className="font-mono text-[10px] uppercase tracking-wider text-zinc-600 mb-2">Open issues</h3>

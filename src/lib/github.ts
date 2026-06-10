@@ -103,6 +103,7 @@ export interface RepoActivity {
   commits: { sha: string; message: string; author: string | null; date: string | null; url: string }[];
   pullRequests: { number: number; title: string; author: string | null; draft: boolean; updatedAt: string; url: string }[];
   issues: { number: number; title: string; updatedAt: string; url: string }[];
+  deployments: { environment: string; state: string; url: string | null; createdAt: string }[];
 }
 
 /**
@@ -120,7 +121,7 @@ export async function fetchRepoActivity(repo: string): Promise<RepoActivity | nu
   }>(`/repos/${repo}`);
   if (!meta?.full_name) return null;
 
-  const [commitsRaw, pullsRaw, issuesRaw] = await Promise.all([
+  const [commitsRaw, pullsRaw, issuesRaw, deploymentsRaw] = await Promise.all([
     ghJson<Array<{
       sha: string;
       html_url: string;
@@ -142,7 +143,27 @@ export async function fetchRepoActivity(repo: string): Promise<RepoActivity | nu
       html_url: string;
       pull_request?: unknown;
     }>>(`/repos/${repo}/issues?state=open&per_page=15`),
+    ghJson<Array<{ id: number; environment?: string; created_at: string }>>(
+      `/repos/${repo}/deployments?per_page=4`,
+    ),
   ]);
+
+  // Vercel (and other platforms) report deploys via the GitHub deployments
+  // API, so one read-only token covers code AND deploy status.
+  const deployments = await Promise.all(
+    (deploymentsRaw ?? []).map(async (d) => {
+      const statuses = await ghJson<Array<{ state?: string; environment_url?: string; target_url?: string }>>(
+        `/repos/${repo}/deployments/${d.id}/statuses?per_page=1`,
+      );
+      const latest = statuses?.[0];
+      return {
+        environment: d.environment ?? "unknown",
+        state: latest?.state ?? "pending",
+        url: latest?.environment_url ?? latest?.target_url ?? null,
+        createdAt: d.created_at,
+      };
+    }),
+  );
 
   return {
     repo: meta.full_name,
@@ -173,6 +194,7 @@ export async function fetchRepoActivity(repo: string): Promise<RepoActivity | nu
         updatedAt: i.updated_at,
         url: i.html_url,
       })),
+    deployments,
   };
 }
 
@@ -267,6 +289,127 @@ export async function scanRepoSecrets(
   return { scannedFiles: scanned, findings: uniq };
 }
 
+export interface RepoTreeEntry {
+  path: string;
+  size: number;
+}
+
+/**
+ * Lists the repo's text-editable files (blobs) on a branch for the in-browser
+ * editor. Skips vendored/build dirs; capped so huge monorepos stay usable.
+ */
+export async function fetchRepoTree(
+  repo: string,
+  ref?: string,
+): Promise<{ branch: string; files: RepoTreeEntry[] } | null> {
+  const meta = await ghJson<{ default_branch?: string }>(`/repos/${repo}`);
+  if (!meta?.default_branch) return null;
+  const branch = ref || meta.default_branch;
+
+  const tree = await ghJson<{ tree?: { path: string; type: string; size?: number }[] }>(
+    `/repos/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`,
+  );
+  if (!tree?.tree) return null;
+
+  const SKIP = /(^|\/)(node_modules|dist|build|\.next|vendor|\.git)(\/|$)/;
+  const files = tree.tree
+    .filter((n) => n.type === "blob" && !SKIP.test(n.path))
+    .slice(0, 500)
+    .map((n) => ({ path: n.path, size: n.size ?? 0 }));
+
+  return { branch, files };
+}
+
+/** Reads one file's text content from a branch. Null if missing/too big. */
+export async function fetchRepoFileContent(
+  repo: string,
+  path: string,
+  ref?: string,
+): Promise<{ content: string } | null> {
+  const refQuery = ref ? `?ref=${encodeURIComponent(ref)}` : "";
+  const data = await ghJson<{ content?: string; encoding?: string; size?: number }>(
+    `/repos/${repo}/contents/${path}${refQuery}`,
+  );
+  if (!data || data.size === undefined || data.size > 400_000) return null;
+  const content = decodeBase64(data.content);
+  if (content === null || content.includes("\u0000")) return null;
+  return { content };
+}
+
+/**
+ * Pushes a set of files to a branch in one commit using the git data API
+ * (blob/tree/commit/ref). Creates the branch off the default branch if it
+ * doesn't exist; otherwise commits on top of it. This is how the Copilot
+ * builds multi-file apps into a repo.
+ */
+export async function pushFilesToRepo(
+  repo: string,
+  opts: { branch: string; message: string; files: { path: string; content: string }[] },
+): Promise<{ branch: string; commitSha: string; commitUrl: string } | { error: string }> {
+  const meta = await ghJson<{ default_branch?: string }>(`/repos/${repo}`);
+  if (!meta?.default_branch) return { error: "repo not found or no access" };
+
+  const baseRef = await ghJson<{ object?: { sha: string } }>(
+    `/repos/${repo}/git/ref/heads/${meta.default_branch}`,
+  );
+  if (!baseRef?.object?.sha) return { error: "couldn't read the default branch" };
+
+  let headSha = baseRef.object.sha;
+  const created = await ghReq("POST", `/repos/${repo}/git/refs`, {
+    ref: `refs/heads/${opts.branch}`,
+    sha: headSha,
+  });
+  if (!created.ok) {
+    const existing = await ghJson<{ object?: { sha: string } }>(
+      `/repos/${repo}/git/ref/heads/${opts.branch}`,
+    );
+    if (!existing?.object?.sha) return { error: "couldn't create the branch (token may be read-only)" };
+    headSha = existing.object.sha;
+  }
+
+  const headCommit = await ghJson<{ tree?: { sha: string } }>(`/repos/${repo}/git/commits/${headSha}`);
+  if (!headCommit?.tree?.sha) return { error: "couldn't read the base commit" };
+
+  const treeRes = await ghReq("POST", `/repos/${repo}/git/trees`, {
+    base_tree: headCommit.tree.sha,
+    tree: opts.files.map((f) => ({ path: f.path, mode: "100644", type: "blob", content: f.content })),
+  });
+  const tree = treeRes.json as { sha?: string } | null;
+  if (!treeRes.ok || !tree?.sha) return { error: "couldn't write the files (token may be read-only)" };
+
+  const commitRes = await ghReq("POST", `/repos/${repo}/git/commits`, {
+    message: opts.message,
+    tree: tree.sha,
+    parents: [headSha],
+  });
+  const commit = commitRes.json as { sha?: string; html_url?: string } | null;
+  if (!commitRes.ok || !commit?.sha) return { error: "couldn't create the commit" };
+
+  const refRes = await ghReq("PATCH", `/repos/${repo}/git/refs/heads/${opts.branch}`, { sha: commit.sha });
+  if (!refRes.ok) return { error: "couldn't update the branch" };
+
+  return { branch: opts.branch, commitSha: commit.sha, commitUrl: commit.html_url ?? "" };
+}
+
+/** Opens a PR for an existing branch against the default branch. */
+export async function createPullRequest(
+  repo: string,
+  opts: { title: string; body: string; head: string },
+): Promise<{ url: string } | { error: string }> {
+  const meta = await ghJson<{ default_branch?: string }>(`/repos/${repo}`);
+  if (!meta?.default_branch) return { error: "repo not found or no access" };
+
+  const prRes = await ghReq("POST", `/repos/${repo}/pulls`, {
+    title: opts.title,
+    body: opts.body,
+    head: opts.head,
+    base: meta.default_branch,
+  });
+  const prJson = prRes.json as { html_url?: string } | null;
+  if (!prRes.ok || !prJson?.html_url) return { error: "couldn't open the PR" };
+  return { url: prJson.html_url };
+}
+
 /**
  * Opens a single-file pull request on a repo: creates a branch off the default
  * branch, commits the file, and opens a PR. Reviewable — never auto-merged.
@@ -295,13 +438,7 @@ export async function openPullRequest(
   });
   if (!fileRes.ok) return { error: "couldn't commit the file" };
 
-  const prRes = await ghReq("POST", `/repos/${repo}/pulls`, {
-    title: opts.title,
-    body: opts.body,
-    head: opts.branch,
-    base,
-  });
-  const prJson = prRes.json as { html_url?: string } | null;
-  if (!prRes.ok || !prJson?.html_url) return { error: "branch + file created, but couldn't open the PR" };
-  return { url: prJson.html_url };
+  const pr = await createPullRequest(repo, { title: opts.title, body: opts.body, head: opts.branch });
+  if ("error" in pr) return { error: "branch + file created, but couldn't open the PR" };
+  return pr;
 }
