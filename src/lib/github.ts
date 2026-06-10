@@ -94,6 +94,88 @@ export async function fetchRepoContext(repo: string): Promise<RepoContext | null
   };
 }
 
+export interface RepoActivity {
+  repo: string;
+  url: string;
+  defaultBranch: string;
+  pushedAt: string | null;
+  stars: number;
+  commits: { sha: string; message: string; author: string | null; date: string | null; url: string }[];
+  pullRequests: { number: number; title: string; author: string | null; draft: boolean; updatedAt: string; url: string }[];
+  issues: { number: number; title: string; updatedAt: string; url: string }[];
+}
+
+/**
+ * Live activity snapshot for the project tracker: recent commits, open PRs,
+ * and open issues, fetched fresh on every call (no caching). Returns null if
+ * the repo is unreachable (bad/missing token or wrong repo).
+ */
+export async function fetchRepoActivity(repo: string): Promise<RepoActivity | null> {
+  const meta = await ghJson<{
+    full_name?: string;
+    html_url?: string;
+    default_branch?: string;
+    pushed_at?: string;
+    stargazers_count?: number;
+  }>(`/repos/${repo}`);
+  if (!meta?.full_name) return null;
+
+  const [commitsRaw, pullsRaw, issuesRaw] = await Promise.all([
+    ghJson<Array<{
+      sha: string;
+      html_url: string;
+      commit: { message: string; author?: { name?: string; date?: string } };
+      author?: { login?: string } | null;
+    }>>(`/repos/${repo}/commits?per_page=10`),
+    ghJson<Array<{
+      number: number;
+      title: string;
+      draft?: boolean;
+      updated_at: string;
+      html_url: string;
+      user?: { login?: string } | null;
+    }>>(`/repos/${repo}/pulls?state=open&per_page=10`),
+    ghJson<Array<{
+      number: number;
+      title: string;
+      updated_at: string;
+      html_url: string;
+      pull_request?: unknown;
+    }>>(`/repos/${repo}/issues?state=open&per_page=15`),
+  ]);
+
+  return {
+    repo: meta.full_name,
+    url: meta.html_url ?? `https://github.com/${repo}`,
+    defaultBranch: meta.default_branch ?? "main",
+    pushedAt: meta.pushed_at ?? null,
+    stars: meta.stargazers_count ?? 0,
+    commits: (commitsRaw ?? []).map((c) => ({
+      sha: c.sha.slice(0, 7),
+      message: c.commit.message.split("\n")[0].slice(0, 160),
+      author: c.author?.login ?? c.commit.author?.name ?? null,
+      date: c.commit.author?.date ?? null,
+      url: c.html_url,
+    })),
+    pullRequests: (pullsRaw ?? []).map((p) => ({
+      number: p.number,
+      title: p.title.slice(0, 160),
+      author: p.user?.login ?? null,
+      draft: Boolean(p.draft),
+      updatedAt: p.updated_at,
+      url: p.html_url,
+    })),
+    issues: (issuesRaw ?? [])
+      .filter((i) => !i.pull_request)
+      .map((i) => ({
+        number: i.number,
+        title: i.title.slice(0, 160),
+        updatedAt: i.updated_at,
+        url: i.html_url,
+      })),
+  };
+}
+
 /* ============================================================
    Write + scan helpers (used by the agentic Copilot tools)
    ============================================================ */
