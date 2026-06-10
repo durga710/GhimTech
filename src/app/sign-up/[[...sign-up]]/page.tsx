@@ -10,7 +10,8 @@ type AuthSearchParams = Promise<{
 
 const errorMessages: Record<string, string> = {
   "invalid-signup": "Use a valid email and a password of at least 8 characters.",
-  "not-allowed": "That email is not approved for the dashboard.",
+  "invalid-invite": "A valid invite code is required to join the workspace.",
+  "not-allowed": "That account is not approved for the dashboard.",
   "signup-failed": "Enrollment failed. Try signing in if the account already exists.",
   "supabase-env-missing": "Supabase Auth is not configured yet.",
 };
@@ -42,14 +43,16 @@ export default async function SignUpPage({
         <Logo variant="lockup" size={28} />
       </Link>
 
-      <p className="mb-8 label-tactical text-vital-300">Operator enrollment</p>
+      <p className="mb-8 label-tactical text-vital-300">Team enrollment</p>
 
       <form action={signUpWithPasswordAction} className="glass-panel-strong w-full max-w-md p-6">
         <input type="hidden" name="next" value={nextPath} />
 
         <div className="space-y-2">
           <h1 className="text-2xl text-white">Create Account</h1>
-          <p className="text-sm text-zinc-400">Create the dashboard operator account.</p>
+          <p className="text-sm text-zinc-400">
+            Join the Ghimtech workspace with your team invite code.
+          </p>
         </div>
 
         {error && errorMessages[error] ? (
@@ -110,6 +113,21 @@ export default async function SignUpPage({
               className="w-full rounded-lg border border-white/[0.08] bg-ink-950/60 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-vital-400/50"
               placeholder="8 characters minimum"
             />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="label-tactical">Invite code</span>
+            <input
+              autoComplete="one-time-code"
+              maxLength={120}
+              name="inviteCode"
+              type="text"
+              className="w-full rounded-lg border border-white/[0.08] bg-ink-950/60 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-vital-400/50"
+              placeholder="Provided by the workspace owner"
+            />
+            <span className="block text-xs text-zinc-500">
+              Required unless you are the workspace owner.
+            </span>
           </label>
         </div>
 

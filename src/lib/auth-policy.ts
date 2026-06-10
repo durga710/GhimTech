@@ -13,6 +13,33 @@ export function isAllowedOperatorEmail(email: string | null | undefined): boolea
   return Boolean(allowedEmail) && normalizeEmail(email) === allowedEmail;
 }
 
+/**
+ * Invite codes let teammates enroll without being the workspace owner.
+ * Configure via AUTH_TEAM_INVITE_CODES as a comma-separated list.
+ */
+export function getTeamInviteCodes(): string[] {
+  return (process.env.AUTH_TEAM_INVITE_CODES ?? "")
+    .split(",")
+    .map((code) => code.trim())
+    .filter(Boolean);
+}
+
+export function isValidTeamInviteCode(code: string | null | undefined): boolean {
+  const candidate = (code ?? "").trim();
+  return Boolean(candidate) && getTeamInviteCodes().includes(candidate);
+}
+
+/**
+ * Sign-up gate: the workspace owner enrolls with their email alone;
+ * everyone else needs a valid invite code.
+ */
+export function canEnrollWithInvite(
+  email: string | null | undefined,
+  inviteCode: string | null | undefined
+): boolean {
+  return isAllowedOperatorEmail(email) || isValidTeamInviteCode(inviteCode);
+}
+
 export function safeRedirectPath(value: FormDataEntryValue | string | null | undefined): string {
   if (typeof value !== "string") return "/dashboard";
 

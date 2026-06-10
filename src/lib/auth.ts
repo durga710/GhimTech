@@ -128,6 +128,27 @@ async function ensureLocalUser(authUser: SupabaseUser): Promise<PrismaUser> {
   });
 }
 
+/**
+ * Dashboard authorization: the workspace owner is always allowed; anyone
+ * else must already have a local User row (created during invite-code
+ * enrollment). Supabase Auth alone is authentication, not membership.
+ */
+export async function isAuthorizedDashboardAuthUser(
+  authUser: SupabaseUser
+): Promise<boolean> {
+  if (isAllowedOperatorEmail(authUser.email)) return true;
+
+  const email = normalizeEmail(authUser.email);
+  const member = await prisma.user.findFirst({
+    where: {
+      OR: [{ clerkId: authUser.id }, ...(email ? [{ email }] : [])],
+    },
+    select: { id: true },
+  });
+
+  return member !== null;
+}
+
 async function getAuthenticatedSupabaseUser(): Promise<SupabaseUser | null> {
   let supabase;
 
@@ -147,7 +168,7 @@ async function getAuthenticatedSupabaseUser(): Promise<SupabaseUser | null> {
 
   if (error || !user) return null;
 
-  if (!isAllowedOperatorEmail(user.email)) {
+  if (!(await isAuthorizedDashboardAuthUser(user))) {
     await supabase.auth.signOut();
     redirect("/sign-in?error=not-allowed");
   }
@@ -199,10 +220,12 @@ export async function getOptionalUser(): Promise<PrismaUser | null> {
     error,
   } = await supabase.auth.getUser();
 
-  if (error || !authUser || !isAllowedOperatorEmail(authUser.email)) return null;
+  if (error || !authUser) return null;
 
   const email = normalizeEmail(authUser.email);
 
+  // The local User row doubles as the membership record: anyone without one
+  // (and who isn't the owner, provisioned lazily by requireUser) gets null.
   return prisma.user.findFirst({
     where: {
       OR: [{ clerkId: authUser.id }, { email }],

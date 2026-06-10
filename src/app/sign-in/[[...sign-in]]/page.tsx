@@ -11,7 +11,7 @@ type AuthSearchParams = Promise<{
 
 const errorMessages: Record<string, string> = {
   "invalid-credentials": "Email or password is incorrect.",
-  "not-allowed": "That email is not approved for the dashboard.",
+  "not-allowed": "That account is not approved for the dashboard.",
   "supabase-env-missing": "Supabase Auth is not configured yet.",
 };
 
@@ -47,14 +47,14 @@ export default async function SignInPage({
         <Logo variant="lockup" size={28} />
       </Link>
 
-      <p className="mb-8 label-tactical">Operator sign-in · restricted access</p>
+      <p className="mb-8 label-tactical">Workspace sign-in · team access</p>
 
       <form action={signInWithPasswordAction} className="glass-panel-strong w-full max-w-md p-6">
         <input type="hidden" name="next" value={nextPath} />
 
         <div className="space-y-2">
           <h1 className="text-2xl text-white">Command Center</h1>
-          <p className="text-sm text-zinc-400">Sign in with your approved operator account.</p>
+          <p className="text-sm text-zinc-400">Sign in with your Ghimtech workspace account.</p>
         </div>
 
         {error && errorMessages[error] ? (
