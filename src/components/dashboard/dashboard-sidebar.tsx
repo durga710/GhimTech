@@ -30,7 +30,7 @@ import { cn } from "@/lib/utils";
  * the dashboard is an operator surface, not a marketing page.
  */
 
-const NAV_ITEMS = [
+export const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/inbox", label: "Inbox", icon: Inbox },
   { href: "/dashboard/projects", label: "Projects", icon: FolderKanban },
