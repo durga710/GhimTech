@@ -8,6 +8,27 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
+      - name: Recent deployments and their outcomes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/$REPO/deployments?per_page=12" -o /tmp/deps.json
+          echo "created_at | environment | commit | latest_status"
+          jq -r '.[] | [.id, .environment, (.sha[0:7]), .created_at] | @tsv' /tmp/deps.json |
+          while IFS=$'\t' read -r id env sha created; do
+            state=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/$REPO/deployments/$id/statuses?per_page=1" | jq -r '.[0].state // "no-status"')
+            echo "$created | $env | $sha | $state"
+          done
+
+      - name: Vercel platform status
+        run: |
+          curl -s --max-time 15 "https://www.vercel-status.com/api/v2/summary.json" |
+            jq -r '"overall: " + .status.description, (.incidents[]? | "INCIDENT: " + .name + " [" + .status + "]"), (.components[]? | select(.status != "operational") | "component degraded: " + .name + " = " + .status)' \
+            || echo "couldn't fetch vercel status"
+
       - name: Identify served version per host
         run: |
           for url in \
