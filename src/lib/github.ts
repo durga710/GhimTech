@@ -103,6 +103,7 @@ export interface RepoActivity {
   commits: { sha: string; message: string; author: string | null; date: string | null; url: string }[];
   pullRequests: { number: number; title: string; author: string | null; draft: boolean; updatedAt: string; url: string }[];
   issues: { number: number; title: string; updatedAt: string; url: string }[];
+  deployments: { environment: string; state: string; url: string | null; createdAt: string }[];
 }
 
 /**
@@ -120,7 +121,7 @@ export async function fetchRepoActivity(repo: string): Promise<RepoActivity | nu
   }>(`/repos/${repo}`);
   if (!meta?.full_name) return null;
 
-  const [commitsRaw, pullsRaw, issuesRaw] = await Promise.all([
+  const [commitsRaw, pullsRaw, issuesRaw, deploymentsRaw] = await Promise.all([
     ghJson<Array<{
       sha: string;
       html_url: string;
@@ -142,7 +143,27 @@ export async function fetchRepoActivity(repo: string): Promise<RepoActivity | nu
       html_url: string;
       pull_request?: unknown;
     }>>(`/repos/${repo}/issues?state=open&per_page=15`),
+    ghJson<Array<{ id: number; environment?: string; created_at: string }>>(
+      `/repos/${repo}/deployments?per_page=4`,
+    ),
   ]);
+
+  // Vercel (and other platforms) report deploys via the GitHub deployments
+  // API, so one read-only token covers code AND deploy status.
+  const deployments = await Promise.all(
+    (deploymentsRaw ?? []).map(async (d) => {
+      const statuses = await ghJson<Array<{ state?: string; environment_url?: string; target_url?: string }>>(
+        `/repos/${repo}/deployments/${d.id}/statuses?per_page=1`,
+      );
+      const latest = statuses?.[0];
+      return {
+        environment: d.environment ?? "unknown",
+        state: latest?.state ?? "pending",
+        url: latest?.environment_url ?? latest?.target_url ?? null,
+        createdAt: d.created_at,
+      };
+    }),
+  );
 
   return {
     repo: meta.full_name,
@@ -173,6 +194,7 @@ export async function fetchRepoActivity(repo: string): Promise<RepoActivity | nu
         updatedAt: i.updated_at,
         url: i.html_url,
       })),
+    deployments,
   };
 }
 
@@ -265,6 +287,53 @@ export async function scanRepoSecrets(
     return true;
   });
   return { scannedFiles: scanned, findings: uniq };
+}
+
+export interface RepoTreeEntry {
+  path: string;
+  size: number;
+}
+
+/**
+ * Lists the repo's text-editable files (blobs) on a branch for the in-browser
+ * editor. Skips vendored/build dirs; capped so huge monorepos stay usable.
+ */
+export async function fetchRepoTree(
+  repo: string,
+  ref?: string,
+): Promise<{ branch: string; files: RepoTreeEntry[] } | null> {
+  const meta = await ghJson<{ default_branch?: string }>(`/repos/${repo}`);
+  if (!meta?.default_branch) return null;
+  const branch = ref || meta.default_branch;
+
+  const tree = await ghJson<{ tree?: { path: string; type: string; size?: number }[] }>(
+    `/repos/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`,
+  );
+  if (!tree?.tree) return null;
+
+  const SKIP = /(^|\/)(node_modules|dist|build|\.next|vendor|\.git)(\/|$)/;
+  const files = tree.tree
+    .filter((n) => n.type === "blob" && !SKIP.test(n.path))
+    .slice(0, 500)
+    .map((n) => ({ path: n.path, size: n.size ?? 0 }));
+
+  return { branch, files };
+}
+
+/** Reads one file's text content from a branch. Null if missing/too big. */
+export async function fetchRepoFileContent(
+  repo: string,
+  path: string,
+  ref?: string,
+): Promise<{ content: string } | null> {
+  const refQuery = ref ? `?ref=${encodeURIComponent(ref)}` : "";
+  const data = await ghJson<{ content?: string; encoding?: string; size?: number }>(
+    `/repos/${repo}/contents/${path}${refQuery}`,
+  );
+  if (!data || data.size === undefined || data.size > 400_000) return null;
+  const content = decodeBase64(data.content);
+  if (content === null || content.includes("\u0000")) return null;
+  return { content };
 }
 
 /**
