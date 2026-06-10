@@ -1,6 +1,19 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { fetchRepoActivity, fetchRepoContext, scanRepoSecrets, openPullRequest } from "@/lib/github";
+import {
+  createPullRequest,
+  fetchRepoActivity,
+  fetchRepoContext,
+  openPullRequest,
+  pushFilesToRepo,
+  scanRepoSecrets,
+} from "@/lib/github";
+import {
+  isValidBranchName,
+  isValidRepoName,
+  validatePushFiles,
+  MAX_PUSH_FILES,
+} from "@/lib/repo-files";
 
 /**
  * Copilot agent tools. `web_search` is OpenAI's built-in browsing tool
@@ -100,6 +113,36 @@ export const COPILOT_TOOLS = [
       type: "object",
       properties: { slug: { type: "string" } },
       required: ["slug"],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
+  {
+    type: "function" as const,
+    name: "build_app_files",
+    description:
+      "BUILD AN APP: write a complete set of files (up to " +
+      MAX_PUSH_FILES +
+      " per call) to a branch of one of the operator's GitHub repos in a single commit, and optionally open a PR. Repos connected to Vercel automatically get a live preview deployment on the PR — so describing an app, building its files here, and opening a PR yields a running preview URL. Call again with the same branch to add or fix files.",
+    parameters: {
+      type: "object",
+      properties: {
+        repo: { type: "string", description: 'target repo as "owner/name"' },
+        branch: { type: "string", description: "branch to write to; omit to create a new copilot/app-* branch" },
+        message: { type: "string", description: "commit message" },
+        files: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: { path: { type: "string" }, content: { type: "string" } },
+            required: ["path", "content"],
+            additionalProperties: false,
+          },
+        },
+        prTitle: { type: "string", description: "open a PR with this title (omit to just push the branch)" },
+        prBody: { type: "string" },
+      },
+      required: ["repo", "message", "files"],
       additionalProperties: false,
     },
     strict: false,
@@ -223,6 +266,41 @@ export async function executeTool(
       if (!res) return { error: "couldn't read the repo" };
       return { repo: p.sourceRepo, scannedFiles: res.scannedFiles, findingCount: res.findings.length, findings: res.findings.slice(0, 40) };
     }
+    case "build_app_files": {
+      const repo = s(args.repo);
+      if (!isValidRepoName(repo)) return { error: 'repo must be "owner/name"' };
+
+      const rawFiles = Array.isArray(args.files) ? args.files : [];
+      const files = rawFiles.map((f) => {
+        const o = f && typeof f === "object" ? (f as Record<string, unknown>) : {};
+        return { path: s(o.path), content: typeof o.content === "string" ? o.content : "" };
+      });
+      const check = validatePushFiles(files);
+      if (!check.ok) return { error: check.error };
+
+      const branch = s(args.branch) || `copilot/app-${Date.now().toString(36)}`;
+      if (!isValidBranchName(branch)) return { error: "invalid branch name" };
+      const message = s(args.message).slice(0, 200) || "Copilot: build app files";
+
+      const pushed = await pushFilesToRepo(repo, { branch, message, files });
+      if ("error" in pushed) return pushed;
+
+      const prTitle = s(args.prTitle).slice(0, 200);
+      if (!prTitle) return { repo, branch, commitUrl: pushed.commitUrl, fileCount: files.length };
+
+      const pr = await createPullRequest(repo, {
+        title: prTitle,
+        body: s(args.prBody).slice(0, 4000) || prTitle,
+        head: branch,
+      });
+      return {
+        repo,
+        branch,
+        commitUrl: pushed.commitUrl,
+        fileCount: files.length,
+        ...("url" in pr ? { prUrl: pr.url } : { prError: pr.error }),
+      };
+    }
     case "open_pull_request": {
       const slug = s(args.slug);
       const p = await prisma.project.findFirst({ where: { slug, userId }, select: { sourceRepo: true } });
@@ -267,6 +345,12 @@ export function toolLabel(name: string, result: unknown): string {
       return r.repo ? `checked live activity on ${String(r.repo)}` : "tried to check repo activity";
     case "scan_repo_secrets":
       return r.findingCount !== undefined ? `scanned ${String(r.repo ?? "repo")} — ${String(r.findingCount)} finding(s)` : "scanned a repo";
+    case "build_app_files":
+      return r.prUrl
+        ? `built ${String(r.fileCount ?? "")} file(s) & opened a PR`
+        : r.branch
+          ? `pushed ${String(r.fileCount ?? "")} file(s) to ${String(r.branch)}`
+          : "tried to build app files";
     case "open_pull_request":
       return r.url ? "opened a pull request" : "tried to open a PR";
     default:
