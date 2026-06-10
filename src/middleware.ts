@@ -1,5 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isAllowedOperatorEmail } from "@/lib/auth-policy";
+import {
+  isAuthRoute,
+  isProtectedRoute,
+  shouldRedirectAuthenticatedToDashboard,
+} from "@/lib/auth-route-policy";
 import {
   responseWithAuthCookies,
   updateSupabaseSession,
@@ -12,16 +16,11 @@ import {
  *    plus the sign-in / sign-up flows themselves.
  *  - Protected: everything under /dashboard, /admin, and any /api/private routes.
  *
- * Supabase SSR middleware refreshes the auth cookie, validates the user server-side,
- * and redirects unauthenticated requests to the app-owned sign-in page.
+ * Supabase SSR middleware refreshes the auth cookie and validates the user
+ * server-side. Authentication is enforced here; membership (owner email or an
+ * enrolled team member) requires a database lookup, so requireUser() enforces
+ * it inside the Node runtime for every protected query.
  */
-
-const protectedPrefixes = ["/dashboard", "/admin", "/api/private"];
-const authPrefixes = ["/sign-in", "/sign-up"];
-
-function matchesPrefix(pathname: string, prefixes: string[]): boolean {
-  return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-}
 
 function redirectWithSessionCookies(
   request: NextRequest,
@@ -32,17 +31,17 @@ function redirectWithSessionCookies(
 }
 
 export default async function middleware(request: NextRequest) {
-  const { pathname, search } = request.nextUrl;
-  const isProtectedRoute = matchesPrefix(pathname, protectedPrefixes);
-  const isAuthRoute = matchesPrefix(pathname, authPrefixes);
+  const { pathname, search, searchParams } = request.nextUrl;
+  const protectedRoute = isProtectedRoute(pathname);
+  const authRoute = isAuthRoute(pathname);
 
-  if (!isProtectedRoute && !isAuthRoute) {
+  if (!protectedRoute && !authRoute) {
     return NextResponse.next();
   }
 
   const { response, user, error } = await updateSupabaseSession(request);
 
-  if (isProtectedRoute) {
+  if (protectedRoute) {
     const next = encodeURIComponent(`${pathname}${search}`);
 
     if (error || !user) {
@@ -57,14 +56,10 @@ export default async function middleware(request: NextRequest) {
       );
     }
 
-    if (!isAllowedOperatorEmail(user.email)) {
-      return redirectWithSessionCookies(request, response, "/sign-in?error=not-allowed");
-    }
-
     return response;
   }
 
-  if (user && isAllowedOperatorEmail(user.email)) {
+  if (user && shouldRedirectAuthenticatedToDashboard(pathname, searchParams)) {
     return redirectWithSessionCookies(request, response, "/dashboard");
   }
 
