@@ -3,8 +3,10 @@
  *   POST → agentic chat with GPT-5 (OpenAI Responses API). The copilot can
  *          browse the web (built-in web_search) and call function tools that
  *          act on the operator's tasks, projects, notes, and linked repos.
- *          Body: { messages: [{role, content}] }.
- *          Returns { ok, data: { text, actions: [{tool, label}] } }.
+ *          Body: { messages: [{role, content, attachments?}] }.
+ *          Attachments (photos as data URLs, PDFs, text files) ride on the
+ *          latest user message and are passed to the model as vision/file
+ *          input. Returns { ok, data: { text, actions: [{tool, label}] } }.
  *
  * Operator-only, rate-limited. Non-streaming (an agent turn may run several
  * tool round-trips).
@@ -21,12 +23,47 @@ import { z } from "zod";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
+const AttachmentSchema = z.object({
+  name: z.string().min(1).max(200),
+  kind: z.enum(["image", "pdf", "text"]),
+  // Photos and PDFs travel as base64 data URLs; text files arrive pre-read.
+  dataUrl: z.string().max(4_000_000).optional(),
+  text: z.string().max(80_000).optional(),
+});
+
 const ChatSchema = z.object({
   messages: z
-    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1).max(8000) }))
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().min(1).max(8000),
+        attachments: z.array(AttachmentSchema).max(4).optional(),
+      }),
+    )
     .min(1)
     .max(40),
 });
+
+type Attachment = z.infer<typeof AttachmentSchema>;
+
+type ContentPart =
+  | { type: "input_text"; text: string }
+  | { type: "input_image"; image_url: string; detail: "auto" }
+  | { type: "input_file"; filename: string; file_data: string };
+
+function attachmentParts(attachments: Attachment[]): ContentPart[] {
+  const parts: ContentPart[] = [];
+  for (const a of attachments) {
+    if (a.kind === "image" && a.dataUrl?.startsWith("data:image/")) {
+      parts.push({ type: "input_image", image_url: a.dataUrl, detail: "auto" });
+    } else if (a.kind === "pdf" && a.dataUrl?.startsWith("data:application/pdf")) {
+      parts.push({ type: "input_file", filename: a.name, file_data: a.dataUrl });
+    } else if (a.kind === "text" && a.text) {
+      parts.push({ type: "input_text", text: `--- Attached file: ${a.name} ---\n${a.text}` });
+    }
+  }
+  return parts;
+}
 
 export async function POST(req: Request) {
   const user = await requireUser();
@@ -64,8 +101,9 @@ export async function POST(req: Request) {
 
   const instructions =
     "You are the founder's operations copilot inside their dashboard. Be direct, concrete, and genuinely useful. " +
-    "You can BROWSE THE WEB (web_search) and CALL TOOLS that act on the operator's real data (list/create tasks, update task status, list projects, create notes, read a project's linked GitHub repo). " +
-    "Use tools when they help — actually create/update things when asked, search the web for current info, read the repo when asked about a project's direction. After acting, confirm what you did in one line. Reference projects/tasks by name. Keep replies tight unless asked to expand.\n\n" +
+    "You can BROWSE THE WEB (web_search) and CALL TOOLS that act on the operator's real data (list/create tasks, update task status, list projects, create notes, read a project's linked GitHub repo and its live activity). " +
+    "Use tools when they help — actually create/update things when asked, search the web for current info, read the repo when asked about a project's direction. " +
+    "The operator may attach photos or files (screenshots, documents, code) — look at them carefully and use what they contain. After acting, confirm what you did in one line. Reference projects/tasks by name. Keep replies tight unless asked to expand.\n\n" +
     "--- LIVE CONTEXT ---\n" +
     `Operator: ${user.firstName ?? "the founder"}.\n` +
     `Projects: ${projects.map((p) => `${p.name} (slug ${p.slug}) [${p.status} ${p.progress}%]`).join("; ") || "none"}\n` +
@@ -74,11 +112,23 @@ export async function POST(req: Request) {
   const actions: { tool: string; label: string }[] = [];
 
   try {
-    // First turn: the full conversation as input.
+    // First turn: the full conversation as input. Messages with attachments
+    // become multimodal content (text + images + files).
+    const input = parsed.data.messages.map((m) => {
+      if (m.role !== "user" || !m.attachments?.length) {
+        return { role: m.role, content: m.content };
+      }
+      const parts = attachmentParts(m.attachments);
+      return {
+        role: m.role,
+        content: [{ type: "input_text" as const, text: m.content }, ...parts],
+      };
+    });
+
     let resp = await ai.responses.create({
       model: OPENAI_MODEL,
       instructions,
-      input: parsed.data.messages.map((m) => ({ role: m.role, content: m.content })),
+      input,
       tools: COPILOT_TOOLS,
       store: true,
     });

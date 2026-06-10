@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { fetchRepoContext, scanRepoSecrets, openPullRequest } from "@/lib/github";
+import { fetchRepoActivity, fetchRepoContext, scanRepoSecrets, openPullRequest } from "@/lib/github";
 
 /**
  * Copilot agent tools. `web_search` is OpenAI's built-in browsing tool
@@ -71,6 +71,19 @@ export const COPILOT_TOOLS = [
     type: "function" as const,
     name: "read_project_repo",
     description: "Read a project's linked GitHub repo signal (README, status docs, open issues, recent commits) by project slug.",
+    parameters: {
+      type: "object",
+      properties: { slug: { type: "string" } },
+      required: ["slug"],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
+  {
+    type: "function" as const,
+    name: "read_repo_activity",
+    description:
+      "Live GitHub activity for a project's linked repo by project slug: recent commits, open pull requests, open issues, last push time. Use for 'what's happening / what changed recently' questions.",
     parameters: {
       type: "object",
       properties: { slug: { type: "string" } },
@@ -194,6 +207,14 @@ export async function executeTool(
         recentCommits: ctx.recentCommits,
       };
     }
+    case "read_repo_activity": {
+      const slug = s(args.slug);
+      const p = await prisma.project.findFirst({ where: { slug, userId }, select: { sourceRepo: true } });
+      if (!p?.sourceRepo) return { error: "that project has no linked repo" };
+      const activity = await fetchRepoActivity(p.sourceRepo);
+      if (!activity) return { error: "couldn't read the repo" };
+      return activity;
+    }
     case "scan_repo_secrets": {
       const slug = s(args.slug);
       const p = await prisma.project.findFirst({ where: { slug, userId }, select: { sourceRepo: true } });
@@ -242,6 +263,8 @@ export function toolLabel(name: string, result: unknown): string {
       return r.created ? "saved a note" : "tried to save a note";
     case "read_project_repo":
       return r.repo ? `read ${String(r.repo)}` : "tried to read a repo";
+    case "read_repo_activity":
+      return r.repo ? `checked live activity on ${String(r.repo)}` : "tried to check repo activity";
     case "scan_repo_secrets":
       return r.findingCount !== undefined ? `scanned ${String(r.repo ?? "repo")} — ${String(r.findingCount)} finding(s)` : "scanned a repo";
     case "open_pull_request":
