@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DashboardMobileNav } from "@/components/dashboard/dashboard-mobile-nav";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { DashboardTopbar } from "@/components/dashboard/dashboard-topbar";
 import { getInboxUnreadCount } from "@/lib/dashboard/data";
@@ -45,6 +46,7 @@ export default async function DashboardLayout({
 
       <div className="lg:pl-60">
         <DashboardTopbar />
+        <DashboardMobileNav inboxUnread={inboxUnread} />
         <main className="px-6 py-6 lg:px-8 lg:py-8 max-w-[1600px]">
           {children}
         </main>
