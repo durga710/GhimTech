@@ -58,6 +58,12 @@ export const ProjectCreateSchema = z.object({
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/, "Color must be a 6-digit hex code")
     .optional(),
+  sourceRepo: z
+    .string()
+    .max(140)
+    .regex(/^[\w.-]+\/[\w.-]+$/, 'Repo must be in "owner/name" form, e.g. durga710/rayhealth-evv-platform')
+    .nullable()
+    .optional(),
 });
 
 export const ProjectUpdateSchema = ProjectCreateSchema.partial().omit({ slug: true });

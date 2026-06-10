@@ -70,11 +70,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         )}
       </section>
 
+      <RepoActivityPanel projectId={project.id} repo={project.sourceRepo} />
       {project.sourceRepo && (
-        <>
-          <RepoActivityPanel projectId={project.id} repo={project.sourceRepo} />
-          <CopilotSyncPanel projectId={project.id} repo={project.sourceRepo} currentProgress={project.progress} />
-        </>
+        <CopilotSyncPanel projectId={project.id} repo={project.sourceRepo} currentProgress={project.progress} />
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

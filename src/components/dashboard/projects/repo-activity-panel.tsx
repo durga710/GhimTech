@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { GitBranch, GitCommitHorizontal, GitPullRequest, CircleDot, Loader2, Star } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { GitBranch, GitCommitHorizontal, GitPullRequest, CircleDot, Loader2, Star, Pencil } from "lucide-react";
 import { relativeTime } from "@/lib/dashboard/format";
 
 interface RepoActivity {
@@ -18,11 +19,19 @@ interface RepoActivity {
 const REFRESH_MS = 60_000;
 
 /**
- * Live GitHub activity for a repo-linked project. Polls the API (which reads
- * GitHub uncached) every minute while the tab is visible, so the tracker
- * shows what's actually happening in the repo right now.
+ * Live GitHub activity for a project. Polls the API (which reads GitHub
+ * uncached) every minute while the tab is visible, so the tracker shows
+ * what's actually happening in the repo right now. When the project has no
+ * linked repo yet, renders an inline "link a repo" form instead (PATCHes
+ * the project's sourceRepo).
  */
-export function RepoActivityPanel({ projectId, repo }: { projectId: string; repo: string }) {
+export function RepoActivityPanel({ projectId, repo: initialRepo }: { projectId: string; repo: string | null }) {
+  const router = useRouter();
+  const [repo, setRepo] = useState(initialRepo);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(initialRepo ?? "");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [activity, setActivity] = useState<RepoActivity | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fetchedAt, setFetchedAt] = useState<string | null>(null);
@@ -46,12 +55,93 @@ export function RepoActivityPanel({ projectId, repo }: { projectId: string; repo
   }, [projectId]);
 
   useEffect(() => {
+    if (!repo) return;
+    setLoading(true);
     void load();
     const timer = setInterval(() => {
       if (document.visibilityState === "visible") void load();
     }, REFRESH_MS);
     return () => clearInterval(timer);
-  }, [load]);
+  }, [load, repo]);
+
+  async function saveRepo() {
+    const value = draft.trim();
+    if (!/^[\w.-]+\/[\w.-]+$/.test(value)) {
+      setSaveError('Use "owner/name", e.g. durga710/rayhealth-evv-platform');
+      return;
+    }
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sourceRepo: value }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        setSaveError(json?.error?.message ?? "Couldn't save.");
+      } else {
+        setRepo(value);
+        setEditing(false);
+        setActivity(null);
+        setError(null);
+        router.refresh();
+      }
+    } catch {
+      setSaveError("Couldn't save.");
+    }
+    setSaving(false);
+  }
+
+  const linkForm = (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        void saveRepo();
+      }}
+      className="flex flex-wrap items-center gap-2"
+    >
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        placeholder="owner/repo — e.g. durga710/rayhealth-evv-platform"
+        className="flex-1 min-w-[16rem] bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 font-mono text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-signal-400/50"
+      />
+      <button type="submit" disabled={saving || !draft.trim()} className="btn-signal text-xs disabled:opacity-50">
+        {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : repo ? "Update" : "Link repo"}
+      </button>
+      {repo && (
+        <button
+          type="button"
+          onClick={() => {
+            setEditing(false);
+            setDraft(repo);
+            setSaveError(null);
+          }}
+          className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+        >
+          Cancel
+        </button>
+      )}
+      {saveError && <span className="w-full text-xs text-flare-200">{saveError}</span>}
+    </form>
+  );
+
+  if (!repo) {
+    return (
+      <section className="glass-panel p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <GitBranch className="h-4 w-4 text-signal-300" />
+          <h2 className="label-tactical">Live repo activity</h2>
+        </div>
+        <p className="text-sm text-zinc-400 mb-3">
+          Link this project to a GitHub repo to track commits, pull requests, and issues live.
+        </p>
+        {linkForm}
+      </section>
+    );
+  }
 
   return (
     <section className="glass-panel p-6">
@@ -66,6 +156,18 @@ export function RepoActivityPanel({ projectId, repo }: { projectId: string; repo
         >
           {repo}
         </a>
+        <button
+          type="button"
+          aria-label="Change linked repo"
+          onClick={() => {
+            setEditing((v) => !v);
+            setDraft(repo);
+            setSaveError(null);
+          }}
+          className="text-zinc-600 hover:text-signal-300 transition-colors"
+        >
+          <Pencil className="h-3 w-3" />
+        </button>
         <span className="ml-auto flex items-center gap-1.5 font-mono text-[10px] text-zinc-600">
           {loading ? (
             <Loader2 className="h-3 w-3 animate-spin" />
@@ -75,6 +177,8 @@ export function RepoActivityPanel({ projectId, repo }: { projectId: string; repo
           {fetchedAt ? `updated ${relativeTime(fetchedAt)}` : "connecting…"}
         </span>
       </div>
+
+      {editing && <div className="mb-4">{linkForm}</div>}
 
       {error ? (
         <p className="text-xs text-flare-200">{error}</p>
