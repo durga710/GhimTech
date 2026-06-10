@@ -1,0 +1,31 @@
+# Diagnostic: identifies which build each public host is serving, using the
+# sign-in page copy as a version marker ("Operator sign-in" = pre-team-auth
+# code, "Workspace sign-in" = current main). Manually triggered only.
+name: probe-live-site
+on: workflow_dispatch
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Identify served version per host
+        run: |
+          for url in \
+            "https://ghimtech.org/sign-in" \
+            "https://www.ghimtech.org/sign-in" \
+            "https://ghim-tech.vercel.app/sign-in" \
+            "https://ghim-tech-reyghim1093-5928s-projects.vercel.app/sign-in"; do
+            echo "===================="
+            echo "URL: $url"
+            code=$(curl -sL -o /tmp/page.html -w '%{http_code}' --max-time 20 "$url" || echo "FETCH_FAILED")
+            echo "HTTP: $code"
+            grep -o "Workspace sign-in · team access" /tmp/page.html | head -1 && echo "--> NEW code (post-merge)" || true
+            grep -o "Operator sign-in · restricted access" /tmp/page.html | head -1 && echo "--> OLD code (pre-merge)" || true
+            if ! grep -qE "Workspace sign-in|Operator sign-in" /tmp/page.html; then
+              echo "--> no marker found (different app or error page); first 300 chars:"
+              head -c 300 /tmp/page.html; echo
+            fi
+          done
+          echo "===================="
+          echo "ghimtech.org response headers:"
+          curl -sI --max-time 20 https://ghimtech.org | head -12
