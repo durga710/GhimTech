@@ -157,6 +157,7 @@ export const UserPreferencesUpdateSchema = z.object({
   githubToken: z
     .union([z.string().regex(/^(ghp_|github_pat_)[A-Za-z0-9_]{20,}$/), z.literal(""), z.null()])
     .optional(),
+  aiApiKey: z.union([z.string().min(16).max(256), z.literal(""), z.null()]).optional(),
 });
 
 export type UserPreferencesUpdate = z.infer<typeof UserPreferencesUpdateSchema>;

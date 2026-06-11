@@ -25,9 +25,11 @@ export async function GET() {
     update: {},
   });
 
-  // The GitHub token is a secret — report presence only, never the value.
-  const { githubToken, ...rest } = prefs;
-  return ok({ preferences: { ...rest, githubTokenSet: Boolean(githubToken) } });
+  // Secrets report presence only, never the value.
+  const { githubToken, aiApiKey, ...rest } = prefs;
+  return ok({
+    preferences: { ...rest, githubTokenSet: Boolean(githubToken), aiApiKeySet: Boolean(aiApiKey) },
+  });
 }
 
 export async function PATCH(req: Request) {
@@ -46,6 +48,7 @@ export async function PATCH(req: Request) {
   // "" means clear for the nullable secrets/URLs.
   const data = { ...parsed.data };
   if (data.githubToken === "") data.githubToken = null;
+  if (data.aiApiKey === "") data.aiApiKey = null;
   if (data.aiBaseUrl === "") data.aiBaseUrl = null;
 
   const prefs = await prisma.userPreferences.upsert({
@@ -57,10 +60,16 @@ export async function PATCH(req: Request) {
   await audit({
     action: "preferences.update",
     actorId: user.id,
-    diff: { ...data, ...(data.githubToken !== undefined ? { githubToken: "[redacted]" } : {}) },
+    diff: {
+      ...data,
+      ...(data.githubToken !== undefined ? { githubToken: "[redacted]" } : {}),
+      ...(data.aiApiKey !== undefined ? { aiApiKey: "[redacted]" } : {}),
+    },
     req,
   });
 
-  const { githubToken, ...rest } = prefs;
-  return ok({ preferences: { ...rest, githubTokenSet: Boolean(githubToken) } });
+  const { githubToken, aiApiKey, ...rest } = prefs;
+  return ok({
+    preferences: { ...rest, githubTokenSet: Boolean(githubToken), aiApiKeySet: Boolean(aiApiKey) },
+  });
 }

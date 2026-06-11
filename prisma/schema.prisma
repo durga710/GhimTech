@@ -105,6 +105,7 @@ model UserPreferences {
   aiModel            String   @default("") // empty = provider default
   aiBaseUrl          String? // OpenAI-compatible URL for local/self-hosted
   githubToken        String? // member's own fine-grained PAT; commits/PRs use it
+  aiApiKey           String? // member's own key for the selected AI provider
   updatedAt          DateTime @updatedAt
 }
 
