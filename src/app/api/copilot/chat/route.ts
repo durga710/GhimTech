@@ -18,6 +18,8 @@ import { ok, apiErrors } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
 import { getOpenAI, OPENAI_MODEL } from "@/lib/openai";
 import { COPILOT_TOOLS, executeTool, toolLabel } from "@/lib/copilot-tools";
+import { withGitHubToken } from "@/lib/github";
+import { runAnthropicAgent, runLocalAgent, PROVIDER_DEFAULT_MODEL } from "@/lib/ai-agent";
 import { isValidRepoName } from "@/lib/repo-files";
 import { z } from "zod";
 
@@ -87,7 +89,7 @@ export async function POST(req: Request) {
   if (!parsed.success) return apiErrors.validation(parsed.error);
 
   // Compact live context for the system instructions.
-  const [projects, tasks] = await Promise.all([
+  const [projects, tasks, prefs] = await Promise.all([
     prisma.project.findMany({
       where: { userId: user.id, status: { not: "ARCHIVED" } },
       select: { name: true, slug: true, status: true, progress: true, sourceRepo: true },
@@ -100,7 +102,14 @@ export async function POST(req: Request) {
       select: { title: true, priority: true },
       take: 25,
     }),
+    prisma.userPreferences.findUnique({
+      where: { userId: user.id },
+      select: { aiProvider: true, aiModel: true, aiBaseUrl: true, githubToken: true },
+    }),
   ]);
+
+  const aiProvider = prefs?.aiProvider ?? "openai";
+  const aiModel = prefs?.aiModel || PROVIDER_DEFAULT_MODEL[aiProvider] || "";
 
   const linkedRepos = Array.from(
     new Set(projects.map((p) => p.sourceRepo).filter((r): r is string => Boolean(r))),
@@ -150,6 +159,36 @@ export async function POST(req: Request) {
 
   const instructions = parsed.data.mode === "builder" ? builderInstructions : opsInstructions;
 
+  // Non-OpenAI providers run through the shared agent runners (same tools,
+  // different brain). Attachments are text-flattened there; the OpenAI path
+  // below keeps full multimodal input.
+  if (aiProvider === "anthropic" || aiProvider === "local") {
+    const flat = parsed.data.messages.map((m) => ({
+      role: m.role,
+      content:
+        m.attachments?.length && m.role === "user"
+          ? `${m.content}\n\n[attached: ${m.attachments
+              .map((a) => `${a.name}${a.kind === "text" && a.text ? `:\n${a.text.slice(0, 20000)}` : ""}`)
+              .join("; ")}]`
+          : m.content,
+    }));
+
+    const result = await withGitHubToken(prefs?.githubToken, async () =>
+      aiProvider === "anthropic"
+        ? runAnthropicAgent({ model: aiModel, instructions, messages: flat, userId: user.id })
+        : runLocalAgent({
+            model: aiModel,
+            baseUrl: prefs?.aiBaseUrl || "http://localhost:11434/v1",
+            instructions,
+            messages: flat,
+            userId: user.id,
+          }),
+    );
+
+    if ("error" in result) return apiErrors.badRequest(result.error);
+    return ok({ text: result.text, actions: result.actions, build: result.build });
+  }
+
   const actions: { tool: string; label: string }[] = [];
   // Structured result of the last successful build_app_files call — lets the
   // GCODE studio embed the branch's live preview next to the chat.
@@ -170,7 +209,7 @@ export async function POST(req: Request) {
     });
 
     let resp = await ai.responses.create({
-      model: OPENAI_MODEL,
+      model: aiModel || OPENAI_MODEL,
       instructions,
       input,
       tools: COPILOT_TOOLS,
@@ -194,7 +233,7 @@ export async function POST(req: Request) {
         let result: unknown;
         try {
           const parsedArgs = JSON.parse(call.arguments || "{}") as Record<string, unknown>;
-          result = await executeTool(call.name, parsedArgs, user.id);
+          result = await withGitHubToken(prefs?.githubToken, () => executeTool(call.name, parsedArgs, user.id));
         } catch (e) {
           result = { error: e instanceof Error ? e.message : "tool failed" };
         }
@@ -213,7 +252,7 @@ export async function POST(req: Request) {
       }
 
       resp = await ai.responses.create({
-        model: OPENAI_MODEL,
+        model: aiModel || OPENAI_MODEL,
         previous_response_id: resp.id,
         input: outputs,
         tools: COPILOT_TOOLS,

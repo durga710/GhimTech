@@ -6,7 +6,8 @@
 import { requireUser } from "@/lib/auth";
 import { ok, apiErrors } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
-import { listAccessibleRepos } from "@/lib/github";
+import { listAccessibleRepos, withGitHubToken } from "@/lib/github";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,7 +18,12 @@ export async function GET() {
   const rl = rateLimit(`code.read:${user.id}`, { limit: 600, windowMs: 60 * 60 * 1000 });
   if (!rl.success) return apiErrors.rateLimit(rl.reset);
 
-  const repos = await listAccessibleRepos();
+  const memberPrefs = await prisma.userPreferences.findUnique({
+    where: { userId: user.id },
+    select: { githubToken: true },
+  });
+
+  const repos = await withGitHubToken(memberPrefs?.githubToken, () => listAccessibleRepos());
   if (!repos) return apiErrors.badRequest("GitHub token missing or invalid.");
 
   // The repo this dashboard deploys from — GCODE should not build new apps
