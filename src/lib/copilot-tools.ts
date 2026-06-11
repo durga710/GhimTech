@@ -4,6 +4,7 @@ import {
   createPullRequest,
   fetchRepoActivity,
   fetchRepoContext,
+  listAccessibleRepos,
   openPullRequest,
   pushFilesToRepo,
   scanRepoSecrets,
@@ -115,6 +116,14 @@ export const COPILOT_TOOLS = [
       required: ["slug"],
       additionalProperties: false,
     },
+    strict: false,
+  },
+  {
+    type: "function" as const,
+    name: "list_github_repos",
+    description:
+      "List ALL GitHub repos the token can access (name, private, default branch, last push). Call this BEFORE build_app_files when unsure of the target, and whenever a repo seems unreachable - it is the source of truth for valid push targets.",
+    parameters: { type: "object", properties: {}, additionalProperties: false },
     strict: false,
   },
   {
@@ -266,6 +275,11 @@ export async function executeTool(
       if (!res) return { error: "couldn't read the repo" };
       return { repo: p.sourceRepo, scannedFiles: res.scannedFiles, findingCount: res.findings.length, findings: res.findings.slice(0, 40) };
     }
+    case "list_github_repos": {
+      const repos = await listAccessibleRepos();
+      if (!repos) return { error: "GitHub token missing or invalid" };
+      return { count: repos.length, repos: repos.slice(0, 60) };
+    }
     case "build_app_files": {
       const repo = s(args.repo);
       if (!isValidRepoName(repo)) return { error: 'repo must be "owner/name"' };
@@ -345,6 +359,8 @@ export function toolLabel(name: string, result: unknown): string {
       return r.repo ? `checked live activity on ${String(r.repo)}` : "tried to check repo activity";
     case "scan_repo_secrets":
       return r.findingCount !== undefined ? `scanned ${String(r.repo ?? "repo")} — ${String(r.findingCount)} finding(s)` : "scanned a repo";
+    case "list_github_repos":
+      return r.count !== undefined ? `listed ${String(r.count)} accessible repo(s)` : "tried to list repos";
     case "build_app_files":
       return r.prUrl
         ? `built ${String(r.fileCount ?? "")} file(s) & opened a PR`

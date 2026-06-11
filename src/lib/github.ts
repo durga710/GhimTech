@@ -337,6 +337,26 @@ export async function fetchRepoFileContent(
 }
 
 /**
+ * Lists the repos the GITHUB_TOKEN can actually reach. For fine-grained PATs
+ * this is exactly the granted repo list — the source of truth for where the
+ * Copilot can build. Null if the token is missing/invalid.
+ */
+export async function listAccessibleRepos(): Promise<
+  { repo: string; private: boolean; defaultBranch: string; pushedAt: string | null }[] | null
+> {
+  const repos = await ghJson<
+    Array<{ full_name: string; private: boolean; default_branch: string; pushed_at?: string }>
+  >(`/user/repos?per_page=100&sort=pushed`);
+  if (!repos) return null;
+  return repos.map((r) => ({
+    repo: r.full_name,
+    private: r.private,
+    defaultBranch: r.default_branch,
+    pushedAt: r.pushed_at ?? null,
+  }));
+}
+
+/**
  * Pushes a set of files to a branch in one commit using the git data API
  * (blob/tree/commit/ref). Creates the branch off the default branch if it
  * doesn't exist; otherwise commits on top of it. This is how the Copilot
@@ -347,7 +367,13 @@ export async function pushFilesToRepo(
   opts: { branch: string; message: string; files: { path: string; content: string }[] },
 ): Promise<{ branch: string; commitSha: string; commitUrl: string } | { error: string }> {
   const meta = await ghJson<{ default_branch?: string }>(`/repos/${repo}`);
-  if (!meta?.default_branch) return { error: "repo not found or no access" };
+  if (!meta?.default_branch)
+    return {
+      error:
+        `the GitHub token has no access to ${repo} (or it doesn't exist). ` +
+        `Fix: on GitHub → Settings → Developer settings → Fine-grained tokens → this token → Repository access, grant it ${repo} (or All repositories). ` +
+        `Use list_github_repos to see which repos ARE accessible right now.`,
+    };
 
   const baseRef = await ghJson<{ object?: { sha: string } }>(
     `/repos/${repo}/git/ref/heads/${meta.default_branch}`,
