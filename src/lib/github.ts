@@ -380,6 +380,29 @@ export async function fetchBranchPreview(
 }
 
 /**
+ * Creates a new repo on the authenticated account (the member's own token via
+ * withGitHubToken when connected). auto_init gives it a default branch so
+ * pushFilesToRepo can commit straight to main.
+ */
+export async function createRepo(
+  name: string,
+  opts: { description?: string; isPrivate?: boolean } = {},
+): Promise<{ repo: string; url: string; defaultBranch: string } | { error: string }> {
+  const { ok: created, json } = await ghReq("POST", "/user/repos", {
+    name,
+    description: opts.description?.slice(0, 200),
+    private: opts.isPrivate ?? false,
+    auto_init: true,
+  });
+  const data = (json ?? {}) as { full_name?: string; html_url?: string; default_branch?: string; message?: string; errors?: Array<{ message?: string }> };
+  if (!created || !data.full_name) {
+    const detail = data.errors?.[0]?.message || data.message || "creation failed";
+    return { error: `couldn't create repo "${name}": ${detail}` };
+  }
+  return { repo: data.full_name, url: data.html_url ?? "", defaultBranch: data.default_branch ?? "main" };
+}
+
+/**
  * Lists the repos the GITHUB_TOKEN can actually reach. For fine-grained PATs
  * this is exactly the granted repo list — the source of truth for where the
  * Copilot can build. Null if the token is missing/invalid.

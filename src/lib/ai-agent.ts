@@ -75,9 +75,11 @@ export async function runAnthropicAgent(opts: {
   instructions: string;
   messages: AgentMessage[];
   userId: string;
+  apiKey?: string;
 }): Promise<AgentResult | { error: string }> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return { error: "Anthropic is not configured — add ANTHROPIC_API_KEY in Vercel env vars." };
+  const apiKey = opts.apiKey || process.env.ANTHROPIC_API_KEY;
+  if (!apiKey)
+    return { error: "Anthropic is not configured — add your API key in Settings → AI model, or set ANTHROPIC_API_KEY in Vercel." };
 
   const tools = functionTools().map((t) => ({
     name: t.name,
@@ -160,9 +162,10 @@ export async function runLocalAgent(opts: {
   instructions: string;
   messages: AgentMessage[];
   userId: string;
+  apiKey?: string;
 }): Promise<AgentResult | { error: string }> {
   const client = new OpenAI({
-    apiKey: process.env.LOCAL_AI_API_KEY || "not-needed",
+    apiKey: opts.apiKey || process.env.LOCAL_AI_API_KEY || "not-needed",
     baseURL: opts.baseUrl,
   });
 

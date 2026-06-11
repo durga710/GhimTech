@@ -166,7 +166,7 @@ export function GcodeStudio() {
         body: JSON.stringify({
           messages: history.map((m) => ({ role: m.role, content: m.content })),
           mode: "builder",
-          ...(repo ? { repo } : {}),
+          ...(repo === "__new" ? { newRepo: true } : repo ? { repo } : {}),
         }),
       });
       const json = await res.json().catch(() => null);
@@ -202,6 +202,11 @@ export function GcodeStudio() {
           className="bg-white/[0.03] border border-white/10 rounded-lg px-2 py-1.5 font-mono text-xs text-white focus:outline-none focus:border-vital-400/50 max-w-[16rem]"
         >
           {repos.length === 0 && <option value="">loading repos…</option>}
+          {repos.length > 0 && (
+            <option value="__new" className="bg-ink-950">
+              ✦ create a new repo for this build
+            </option>
+          )}
           {repos.map((r) => (
             <option key={r} value={r} className="bg-ink-950">
               {r === selfRepo ? `${r} (this dashboard)` : r}

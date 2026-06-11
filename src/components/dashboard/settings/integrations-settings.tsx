@@ -27,6 +27,7 @@ interface Props {
     aiModel: string;
     aiBaseUrl: string;
     githubTokenSet: boolean;
+    aiApiKeySet: boolean;
   };
   anthropicAvailable: boolean;
 }
@@ -54,6 +55,8 @@ export function IntegrationsSettings({ initial, anthropicAvailable }: Props) {
   const [provider, setProvider] = useState(initial.aiProvider);
   const [model, setModel] = useState(initial.aiModel);
   const [baseUrl, setBaseUrl] = useState(initial.aiBaseUrl);
+  const [apiKey, setApiKey] = useState("");
+  const [apiKeySet, setApiKeySet] = useState(initial.aiApiKeySet);
   const [aiSaving, setAiSaving] = useState(false);
   const [aiNote, setAiNote] = useState<string | null>(null);
 
@@ -71,7 +74,12 @@ export function IntegrationsSettings({ initial, anthropicAvailable }: Props) {
       aiProvider: provider,
       aiModel: model,
       ...(provider === "local" ? { aiBaseUrl: baseUrl } : {}),
+      ...(apiKey.trim() ? { aiApiKey: apiKey.trim() } : {}),
     });
+    if (!err && apiKey.trim()) {
+      setApiKeySet(true);
+      setApiKey("");
+    }
     setAiNote(err ?? "Saved — chats use this model from now on.");
     setAiSaving(false);
   }
@@ -172,11 +180,41 @@ export function IntegrationsSettings({ initial, anthropicAvailable }: Props) {
             </div>
           )}
 
+          <div>
+            <label className="block font-mono text-[10px] uppercase tracking-wider text-zinc-600 mb-1.5">
+              Your API key {apiKeySet && <span className="text-vital-300 normal-case">· connected</span>}
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder={apiKeySet ? "key saved — paste to replace" : "sk-… (used instead of the workspace key)"}
+                className="flex-1 bg-white/[0.03] border border-white/10 rounded-lg px-3 py-2 font-mono text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-signal-400/50"
+              />
+              {apiKeySet && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const err = await patchPreferences({ aiApiKey: "" });
+                    if (!err) {
+                      setApiKeySet(false);
+                      setAiNote("Key removed — back to the workspace key.");
+                    }
+                  }}
+                  className="text-xs text-zinc-500 hover:text-flare-200 transition-colors shrink-0"
+                >
+                  remove
+                </button>
+              )}
+            </div>
+          </div>
+
           <p className="text-xs text-zinc-500">{preset.hint}</p>
-          {provider === "anthropic" && !anthropicAvailable && (
+          {provider === "anthropic" && !anthropicAvailable && !apiKeySet && (
             <p className="flex items-center gap-1.5 text-xs text-flare-200">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-              ANTHROPIC_API_KEY isn&apos;t set in Vercel yet — chats will error until it&apos;s added.
+              No Anthropic key yet — paste yours above, or set ANTHROPIC_API_KEY in Vercel.
             </p>
           )}
 

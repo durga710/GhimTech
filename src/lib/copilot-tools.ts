@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import {
   createPullRequest,
+  createRepo,
   fetchRepoActivity,
   fetchRepoContext,
   listAccessibleRepos,
@@ -114,6 +115,23 @@ export const COPILOT_TOOLS = [
       type: "object",
       properties: { slug: { type: "string" } },
       required: ["slug"],
+      additionalProperties: false,
+    },
+    strict: false,
+  },
+  {
+    type: "function" as const,
+    name: "create_github_repo",
+    description:
+      "Create a brand-new GitHub repo on the operator's account (auto-initialized with a main branch). Use when building a NEW app that deserves its own repo, then push files into it with build_app_files (branch 'main', no PR needed). Name must be short kebab-case.",
+    parameters: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "repo name, kebab-case, e.g. waitlist-landing" },
+        description: { type: "string" },
+        private: { type: "boolean", description: "default false (public)" },
+      },
+      required: ["name"],
       additionalProperties: false,
     },
     strict: false,
@@ -275,6 +293,15 @@ export async function executeTool(
       if (!res) return { error: "couldn't read the repo" };
       return { repo: p.sourceRepo, scannedFiles: res.scannedFiles, findingCount: res.findings.length, findings: res.findings.slice(0, 40) };
     }
+    case "create_github_repo": {
+      const name = s(args.name).trim();
+      if (!/^[a-z0-9][a-z0-9-_.]{0,90}$/i.test(name)) return { error: "invalid repo name (use kebab-case)" };
+      const created = await createRepo(name, {
+        description: s(args.description) || undefined,
+        isPrivate: args.private === true,
+      });
+      return created;
+    }
     case "list_github_repos": {
       const repos = await listAccessibleRepos();
       if (!repos) return { error: "GitHub token missing or invalid" };
@@ -359,6 +386,8 @@ export function toolLabel(name: string, result: unknown): string {
       return r.repo ? `checked live activity on ${String(r.repo)}` : "tried to check repo activity";
     case "scan_repo_secrets":
       return r.findingCount !== undefined ? `scanned ${String(r.repo ?? "repo")} — ${String(r.findingCount)} finding(s)` : "scanned a repo";
+    case "create_github_repo":
+      return r.repo ? `created repo ${String(r.repo)}` : "tried to create a repo";
     case "list_github_repos":
       return r.count !== undefined ? `listed ${String(r.count)} accessible repo(s)` : "tried to list repos";
     case "build_app_files":

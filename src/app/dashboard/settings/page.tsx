@@ -36,6 +36,7 @@ export default async function SettingsPage() {
           aiModel: prefs.aiModel,
           aiBaseUrl: prefs.aiBaseUrl ?? "",
           githubTokenSet: Boolean(prefs.githubToken),
+          aiApiKeySet: Boolean(prefs.aiApiKey),
         }}
         anthropicAvailable={Boolean(process.env.ANTHROPIC_API_KEY)}
       />

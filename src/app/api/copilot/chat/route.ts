@@ -16,6 +16,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ok, apiErrors } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
+import OpenAI from "openai";
 import { getOpenAI, OPENAI_MODEL } from "@/lib/openai";
 import { COPILOT_TOOLS, executeTool, toolLabel } from "@/lib/copilot-tools";
 import { withGitHubToken } from "@/lib/github";
@@ -47,6 +48,7 @@ const ChatSchema = z.object({
     .max(40),
   mode: z.enum(["ops", "builder"]).optional(),
   repo: z.string().max(140).optional(),
+  newRepo: z.boolean().optional(),
 });
 
 type Attachment = z.infer<typeof AttachmentSchema>;
@@ -76,9 +78,6 @@ export async function POST(req: Request) {
   const rl = rateLimit(`copilot.chat:${user.id}`, { limit: 100, windowMs: 60 * 60 * 1000 });
   if (!rl.success) return apiErrors.rateLimit(rl.reset);
 
-  const ai = getOpenAI();
-  if (!ai) return apiErrors.badRequest("AI is not configured (missing OPENAI_API_KEY).");
-
   let body: unknown;
   try {
     body = await req.json();
@@ -104,12 +103,17 @@ export async function POST(req: Request) {
     }),
     prisma.userPreferences.findUnique({
       where: { userId: user.id },
-      select: { aiProvider: true, aiModel: true, aiBaseUrl: true, githubToken: true },
+      select: { aiProvider: true, aiModel: true, aiBaseUrl: true, githubToken: true, aiApiKey: true },
     }),
   ]);
 
   const aiProvider = prefs?.aiProvider ?? "openai";
   const aiModel = prefs?.aiModel || PROVIDER_DEFAULT_MODEL[aiProvider] || "";
+  // Member's own key (Settings → AI model) overrides the workspace key.
+  const memberKey = prefs?.aiApiKey || undefined;
+  const ai = aiProvider === "openai" ? (memberKey ? new OpenAI({ apiKey: memberKey }) : getOpenAI()) : null;
+  if (aiProvider === "openai" && !ai)
+    return apiErrors.badRequest("AI is not configured — add your API key in Settings → AI model, or set OPENAI_API_KEY in Vercel.");
 
   const linkedRepos = Array.from(
     new Set(projects.map((p) => p.sourceRepo).filter((r): r is string => Boolean(r))),
@@ -135,11 +139,16 @@ export async function POST(req: Request) {
     "Iterations ('make the hero darker', 'add a pricing section') go to the SAME branch so they land on the same PR. " +
     "NEVER reply with tutorials, setup steps, code blocks to paste, or 'would you like me to' offers — you have hands; use them. NEVER ask about branch names; build_app_files resolves the default branch itself. " +
     "If a repo is inaccessible, call list_github_repos, say which repos ARE available, and relay the tool's fix instructions verbatim. " +
+    "You can CREATE REPOS: when asked for a new app with no good target (or the target says CREATE A NEW REPO), call create_github_repo with a short kebab-case name derived from the app idea, then build_app_files into it with branch 'main' and NO prTitle (a fresh repo needs no PR — push straight to main). Tell the operator the repo URL and that importing it in Vercel (vercel.com/new) makes it live. " +
     "If something needs a secret (API keys etc.), wire the code to read it from env and tell the operator in ONE line which env var to add where. " +
     "Ask at most ONE clarifying question, and only when the request is truly ambiguous — default to building with sensible choices.\n\n" +
     "--- LIVE CONTEXT ---\n" +
     `Operator: ${user.firstName ?? "the founder"}.\n` +
-    `Build target: ${targetRepo ?? "not selected — call list_github_repos and confirm with the operator"}\n` +
+    `Build target: ${
+      parsed.data.newRepo
+        ? "CREATE A NEW REPO on the operator's account, then push the app to its main branch"
+        : targetRepo ?? "not selected — call list_github_repos and confirm with the operator"
+    }\n` +
     `Other known repos: ${linkedRepos.join(", ") || "use list_github_repos"}`;
 
   const opsInstructions =
@@ -175,13 +184,14 @@ export async function POST(req: Request) {
 
     const result = await withGitHubToken(prefs?.githubToken, async () =>
       aiProvider === "anthropic"
-        ? runAnthropicAgent({ model: aiModel, instructions, messages: flat, userId: user.id })
+        ? runAnthropicAgent({ model: aiModel, instructions, messages: flat, userId: user.id, apiKey: memberKey })
         : runLocalAgent({
             model: aiModel,
             baseUrl: prefs?.aiBaseUrl || "http://localhost:11434/v1",
             instructions,
             messages: flat,
             userId: user.id,
+            apiKey: memberKey,
           }),
     );
 
@@ -208,7 +218,7 @@ export async function POST(req: Request) {
       };
     });
 
-    let resp = await ai.responses.create({
+    let resp = await ai!.responses.create({
       model: aiModel || OPENAI_MODEL,
       instructions,
       input,
@@ -251,7 +261,7 @@ export async function POST(req: Request) {
         });
       }
 
-      resp = await ai.responses.create({
+      resp = await ai!.responses.create({
         model: aiModel || OPENAI_MODEL,
         previous_response_id: resp.id,
         input: outputs,
