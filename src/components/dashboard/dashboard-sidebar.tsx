@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   Sparkles,
   Code2,
+  Rocket,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ export const NAV_ITEMS = [
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/notifications", label: "Alerts", icon: Bell },
   { href: "/dashboard/copilot", label: "AI Copilot", icon: Sparkles },
+  { href: "/dashboard/gcode", label: "GCODE", icon: Rocket },
   { href: "/dashboard/code", label: "Code", icon: Code2 },
 ] as const;
 

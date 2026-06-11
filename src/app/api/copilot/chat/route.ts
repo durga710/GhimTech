@@ -18,6 +18,7 @@ import { ok, apiErrors } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
 import { getOpenAI, OPENAI_MODEL } from "@/lib/openai";
 import { COPILOT_TOOLS, executeTool, toolLabel } from "@/lib/copilot-tools";
+import { isValidRepoName } from "@/lib/repo-files";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -42,6 +43,8 @@ const ChatSchema = z.object({
     )
     .min(1)
     .max(40),
+  mode: z.enum(["ops", "builder"]).optional(),
+  repo: z.string().max(140).optional(),
 });
 
 type Attachment = z.infer<typeof AttachmentSchema>;
@@ -103,7 +106,25 @@ export async function POST(req: Request) {
     new Set(projects.map((p) => p.sourceRepo).filter((r): r is string => Boolean(r))),
   );
 
-  const instructions =
+  const targetRepo =
+    parsed.data.mode === "builder" && parsed.data.repo && isValidRepoName(parsed.data.repo)
+      ? parsed.data.repo
+      : null;
+
+  const builderInstructions =
+    "You are GCODE — the operator's app-builder studio. Your single job: turn descriptions (and attached screenshots/files) into WORKING CODE, shipped. " +
+    "EVERY build request follows the same loop: write the complete file set with build_app_files (full file contents, sensible stack — static index.html/CSS/JS for simple pages, Vite or Next.js for real apps), ALWAYS include prTitle so a PR opens, then reply in 2-4 lines: what you built, the PR link, and that the live preview URL appears on the PR in ~2 minutes (Vercel-connected repos). " +
+    "Iterations ('make the hero darker', 'add a pricing section') go to the SAME branch so they land on the same PR. " +
+    "NEVER reply with tutorials, setup steps, code blocks to paste, or 'would you like me to' offers — you have hands; use them. NEVER ask about branch names; build_app_files resolves the default branch itself. " +
+    "If a repo is inaccessible, call list_github_repos, say which repos ARE available, and relay the tool's fix instructions verbatim. " +
+    "If something needs a secret (API keys etc.), wire the code to read it from env and tell the operator in ONE line which env var to add where. " +
+    "Ask at most ONE clarifying question, and only when the request is truly ambiguous — default to building with sensible choices.\n\n" +
+    "--- LIVE CONTEXT ---\n" +
+    `Operator: ${user.firstName ?? "the founder"}.\n` +
+    `Build target: ${targetRepo ?? "not selected — call list_github_repos and confirm with the operator"}\n` +
+    `Other known repos: ${linkedRepos.join(", ") || "use list_github_repos"}`;
+
+  const opsInstructions =
     "You are the founder's operations copilot inside their dashboard. Be direct, concrete, and genuinely useful. " +
     "You can BROWSE THE WEB (web_search) and CALL TOOLS that act on the operator's real data (list/create tasks, update task status, list projects, create notes, read a project's linked GitHub repo and its live activity). " +
     "HARD RULE — ACT, DON'T INSTRUCT: you have hands. When the operator asks for an app, a feature, a fix, or any code, you MUST do the work yourself by calling build_app_files (complete file contents, sensible stack — static index.html for tiny things, Vite/Next for real apps) and reply with the PR link. " +
@@ -117,6 +138,8 @@ export async function POST(req: Request) {
     `Projects: ${projects.map((p) => `${p.name} (slug ${p.slug}) [${p.status} ${p.progress}%]`).join("; ") || "none"}\n` +
     `GitHub repos you can build into (build_app_files targets): ${linkedRepos.join(", ") || "none linked yet — ask the operator for an owner/name repo"}\n` +
     `Top open tasks: ${tasks.map((t) => `[${t.priority}] ${t.title}`).join("; ") || "none"}`;
+
+  const instructions = parsed.data.mode === "builder" ? builderInstructions : opsInstructions;
 
   const actions: { tool: string; label: string }[] = [];
 
