@@ -337,6 +337,31 @@ export async function fetchRepoFileContent(
 }
 
 /**
+ * Finds the live preview URL for a branch's latest deployment (Vercel reports
+ * deploys to GitHub's deployments API). Used by GCODE to embed the running
+ * app next to the chat.
+ */
+export async function fetchBranchPreview(
+  repo: string,
+  branch: string,
+): Promise<{ state: string; url: string | null } | null> {
+  const deployments = await ghJson<Array<{ id: number }>>(
+    `/repos/${repo}/deployments?ref=${encodeURIComponent(branch)}&per_page=1`,
+  );
+  if (!deployments) return null;
+  if (!deployments.length) return { state: "none", url: null };
+
+  const statuses = await ghJson<Array<{ state?: string; environment_url?: string; target_url?: string }>>(
+    `/repos/${repo}/deployments/${deployments[0].id}/statuses?per_page=1`,
+  );
+  const latest = statuses?.[0];
+  return {
+    state: latest?.state ?? "pending",
+    url: latest?.environment_url ?? latest?.target_url ?? null,
+  };
+}
+
+/**
  * Lists the repos the GITHUB_TOKEN can actually reach. For fine-grained PATs
  * this is exactly the granted repo list — the source of truth for where the
  * Copilot can build. Null if the token is missing/invalid.

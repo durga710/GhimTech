@@ -1,7 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Send, Loader2, Rocket, Wrench, FolderGit2, ExternalLink } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Send,
+  Loader2,
+  Rocket,
+  Wrench,
+  FolderGit2,
+  ExternalLink,
+  GitPullRequest,
+  RefreshCw,
+  MonitorPlay,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Action {
@@ -13,6 +23,11 @@ interface Msg {
   content: string;
   actions?: Action[];
 }
+interface Build {
+  repo: string;
+  branch: string;
+  prUrl: string | null;
+}
 
 const STARTERS = [
   "A waitlist landing page with a hero and email signup",
@@ -20,6 +35,9 @@ const STARTERS = [
   "A pricing page with three tiers",
   "A simple blog with three sample posts",
 ];
+
+const PREVIEW_POLL_MS = 6000;
+const PREVIEW_POLL_MAX = 40; // ~4 minutes
 
 /** Render assistant text with clickable links — the PR/preview URL IS the product. */
 function Linkified({ text }: { text: string }) {
@@ -47,9 +65,9 @@ function Linkified({ text }: { text: string }) {
 }
 
 /**
- * GCODE — the app-builder studio. Pick a repo, describe the app; GCODE writes
- * the code, opens the PR, and the PR grows a live preview URL. A focused
- * builder-mode persona of the copilot chat API.
+ * GCODE — the app-builder studio, Replit-style: chat on the left, the
+ * RUNNING APP on the right. When a build lands, the preview pane polls the
+ * branch's Vercel deployment and embeds it the moment it's live.
  */
 export function GcodeStudio() {
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -58,6 +76,10 @@ export function GcodeStudio() {
   const [repos, setRepos] = useState<string[]>([]);
   const [repo, setRepo] = useState("");
   const [repoError, setRepoError] = useState<string | null>(null);
+
+  const [build, setBuild] = useState<Build | null>(null);
+  const [preview, setPreview] = useState<{ state: string; url: string | null }>({ state: "none", url: null });
+  const [previewNonce, setPreviewNonce] = useState(0); // bump to reload iframe / restart polling
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -74,7 +96,7 @@ export function GcodeStudio() {
         if (res.ok && json?.ok) {
           const names = (json.data.repos as { repo: string }[]).map((r) => r.repo);
           setRepos(names);
-          if (names.length && !repo) setRepo(names[0]);
+          setRepo((current) => current || names[0] || "");
         } else {
           setRepoError(json?.error?.message ?? "Couldn't list your repos.");
         }
@@ -85,8 +107,40 @@ export function GcodeStudio() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Poll the branch's deployment until the preview URL is live.
+  useEffect(() => {
+    if (!build) return;
+    let polls = 0;
+    let stopped = false;
+
+    async function poll() {
+      polls += 1;
+      try {
+        const res = await fetch(
+          `/api/github/preview?repo=${encodeURIComponent(build!.repo)}&branch=${encodeURIComponent(build!.branch)}`,
+          { cache: "no-store" },
+        );
+        const json = await res.json().catch(() => null);
+        if (stopped) return;
+        if (res.ok && json?.ok) {
+          setPreview(json.data);
+          if (json.data.state === "success" && json.data.url) return; // done
+          if (json.data.state === "failure" || json.data.state === "error") return; // done (failed)
+        }
+      } catch {
+        // keep polling
+      }
+      if (!stopped && polls < PREVIEW_POLL_MAX) setTimeout(poll, PREVIEW_POLL_MS);
+    }
+
+    setPreview({ state: "pending", url: null });
+    void poll();
+    return () => {
+      stopped = true;
+    };
+  }, [build, previewNonce]);
 
   async function send(text: string) {
     const content = text.trim();
@@ -110,6 +164,10 @@ export function GcodeStudio() {
         setMessages((m) => [...m, { role: "assistant", content: json?.error?.message ?? "Something went wrong." }]);
       } else {
         setMessages((m) => [...m, { role: "assistant", content: json.data.text, actions: json.data.actions }]);
+        if (json.data.build) {
+          setBuild(json.data.build);
+          setPreviewNonce((n) => n + 1);
+        }
       }
     } catch {
       setMessages((m) => [...m, { role: "assistant", content: "Network error. Try again." }]);
@@ -117,11 +175,13 @@ export function GcodeStudio() {
     setBusy(false);
   }
 
-  const uniqueLabels = (actions?: Action[]) =>
-    actions?.length ? Array.from(new Set(actions.map((a) => a.label))) : [];
+  const uniqueLabels = useCallback(
+    (actions?: Action[]) => (actions?.length ? Array.from(new Set(actions.map((a) => a.label))) : []),
+    [],
+  );
 
-  return (
-    <div className="flex flex-col h-[calc(100vh-13rem)] glass-panel-strong overflow-hidden">
+  const chatPane = (
+    <div className="flex flex-col glass-panel-strong overflow-hidden h-full min-h-0">
       {/* Build target */}
       <div className="border-b border-white/[0.06] px-4 py-2.5 flex items-center gap-2">
         <FolderGit2 className="h-4 w-4 text-vital-300 shrink-0" />
@@ -150,8 +210,8 @@ export function GcodeStudio() {
                 Welcome to <span className="text-vital-300">GCODE</span>
               </h2>
               <p className="text-sm text-zinc-400 mb-1 max-w-md mx-auto">
-                Describe the app. GCODE writes the code, opens the pull request, and hands you a live
-                preview — built straight into your GitHub repo.
+                Describe the app. GCODE writes the code, opens the pull request, and runs it live in the
+                preview pane — built straight into your GitHub repo.
               </p>
               <p className="text-xs text-zinc-600 mb-4">Try one:</p>
               <div className="flex flex-wrap gap-2 justify-center max-w-xl">
@@ -222,17 +282,95 @@ export function GcodeStudio() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Describe the app you want built…"
+          placeholder={build ? "Iterate — changes land on the same PR…" : "Describe the app you want built…"}
           className="flex-1 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-vital-400/50"
         />
-        <button
-          type="submit"
-          disabled={busy || !input.trim()}
-          className="btn-signal shrink-0 disabled:opacity-50"
-        >
+        <button type="submit" disabled={busy || !input.trim()} className="btn-signal shrink-0 disabled:opacity-50">
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </button>
       </form>
+    </div>
+  );
+
+  if (!build) {
+    return <div className="h-[calc(100vh-13rem)]">{chatPane}</div>;
+  }
+
+  const previewReady = preview.state === "success" && preview.url;
+  const previewFailed = preview.state === "failure" || preview.state === "error";
+
+  return (
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 h-auto xl:h-[calc(100vh-13rem)]">
+      <div className="h-[60vh] xl:h-full min-h-0">{chatPane}</div>
+
+      {/* Live preview pane */}
+      <div className="glass-panel-strong overflow-hidden flex flex-col h-[70vh] xl:h-full min-h-0">
+        <div className="border-b border-white/[0.06] px-4 py-2.5 flex items-center gap-2 min-w-0">
+          <MonitorPlay className="h-4 w-4 text-vital-300 shrink-0" />
+          <span className="font-mono text-[11px] text-zinc-300 truncate">
+            {build.repo} <span className="text-zinc-600">/</span> {build.branch}
+          </span>
+          <div className="ml-auto flex items-center gap-2 shrink-0">
+            {build.prUrl && (
+              <a
+                href={build.prUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 font-mono text-[11px] text-signal-300 hover:text-signal-200 transition-colors"
+              >
+                <GitPullRequest className="h-3.5 w-3.5" /> PR
+              </a>
+            )}
+            <button
+              type="button"
+              aria-label="Reload preview"
+              onClick={() => setPreviewNonce((n) => n + 1)}
+              className="text-zinc-500 hover:text-vital-300 transition-colors"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+            {previewReady && (
+              <a
+                href={preview.url!}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 font-mono text-[11px] text-vital-300 hover:text-vital-200 transition-colors"
+              >
+                open <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+        </div>
+        <div className="flex-1 min-h-0 bg-white">
+          {previewReady ? (
+            <iframe
+              key={`${preview.url}-${previewNonce}`}
+              title="GCODE live preview"
+              src={preview.url!}
+              className="w-full h-full"
+            />
+          ) : (
+            <div className="h-full grid place-items-center bg-ink-950">
+              <div className="text-center px-6">
+                {previewFailed ? (
+                  <p className="text-sm text-flare-200">
+                    The preview deployment failed — check the PR&apos;s checks for the build log.
+                  </p>
+                ) : (
+                  <>
+                    <Loader2 className="h-6 w-6 animate-spin text-vital-300 mx-auto mb-3" />
+                    <p className="text-sm text-zinc-400">Waiting for the live preview…</p>
+                    <p className="text-xs text-zinc-600 mt-1">
+                      Vercel is deploying the branch — usually under 2 minutes. If this repo isn&apos;t
+                      connected to Vercel yet, open the PR instead.
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

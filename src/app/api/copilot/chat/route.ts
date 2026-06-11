@@ -142,6 +142,9 @@ export async function POST(req: Request) {
   const instructions = parsed.data.mode === "builder" ? builderInstructions : opsInstructions;
 
   const actions: { tool: string; label: string }[] = [];
+  // Structured result of the last successful build_app_files call — lets the
+  // GCODE studio embed the branch's live preview next to the chat.
+  let build: { repo: string; branch: string; prUrl: string | null } | null = null;
 
   try {
     // First turn: the full conversation as input. Messages with attachments
@@ -187,6 +190,12 @@ export async function POST(req: Request) {
           result = { error: e instanceof Error ? e.message : "tool failed" };
         }
         actions.push({ tool: call.name, label: toolLabel(call.name, result) });
+        if (call.name === "build_app_files" && result && typeof result === "object") {
+          const r = result as Record<string, unknown>;
+          if (typeof r.repo === "string" && typeof r.branch === "string") {
+            build = { repo: r.repo, branch: r.branch, prUrl: typeof r.prUrl === "string" ? r.prUrl : null };
+          }
+        }
         outputs.push({
           type: "function_call_output" as const,
           call_id: call.call_id,
@@ -208,7 +217,7 @@ export async function POST(req: Request) {
     }
 
     const text = resp.output_text?.trim() || "Done.";
-    return ok({ text, actions });
+    return ok({ text, actions, build });
   } catch (e) {
     console.error("[copilot-chat]", e);
     return apiErrors.internal();
