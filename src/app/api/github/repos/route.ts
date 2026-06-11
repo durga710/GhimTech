@@ -20,5 +20,12 @@ export async function GET() {
   const repos = await listAccessibleRepos();
   if (!repos) return apiErrors.badRequest("GitHub token missing or invalid.");
 
-  return ok({ repos });
+  // The repo this dashboard deploys from — GCODE should not build new apps
+  // into its own home unless explicitly asked.
+  const selfRepo =
+    process.env.VERCEL_GIT_REPO_OWNER && process.env.VERCEL_GIT_REPO_SLUG
+      ? `${process.env.VERCEL_GIT_REPO_OWNER}/${process.env.VERCEL_GIT_REPO_SLUG}`
+      : null;
+
+  return ok({ repos, selfRepo });
 }

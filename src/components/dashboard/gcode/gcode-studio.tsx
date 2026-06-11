@@ -11,6 +11,11 @@ import {
   GitPullRequest,
   RefreshCw,
   MonitorPlay,
+  Globe,
+  UserRound,
+  CreditCard,
+  Newspaper,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,11 +35,11 @@ interface Build {
 }
 
 const STARTERS = [
-  "A waitlist landing page with a hero and email signup",
-  "A personal portfolio site with project cards",
-  "A pricing page with three tiers",
-  "A simple blog with three sample posts",
-];
+  { icon: Globe, title: "Waitlist landing page", prompt: "A waitlist landing page with a bold hero and email signup form" },
+  { icon: UserRound, title: "Portfolio site", prompt: "A personal portfolio site with an about section and project cards" },
+  { icon: CreditCard, title: "Pricing page", prompt: "A pricing page with three tiers and a featured plan" },
+  { icon: Newspaper, title: "Mini blog", prompt: "A simple blog with three sample posts and a clean reading layout" },
+] as const;
 
 const PREVIEW_POLL_MS = 6000;
 const PREVIEW_POLL_MAX = 40; // ~4 minutes
@@ -75,6 +80,7 @@ export function GcodeStudio() {
   const [busy, setBusy] = useState(false);
   const [repos, setRepos] = useState<string[]>([]);
   const [repo, setRepo] = useState("");
+  const [selfRepo, setSelfRepo] = useState<string | null>(null);
   const [repoError, setRepoError] = useState<string | null>(null);
 
   const [build, setBuild] = useState<Build | null>(null);
@@ -94,9 +100,13 @@ export function GcodeStudio() {
         const json = await res.json().catch(() => null);
         if (cancelled) return;
         if (res.ok && json?.ok) {
-          const names = (json.data.repos as { repo: string }[]).map((r) => r.repo);
+          const self: string | null = json.data.selfRepo ?? null;
+          const names = (json.data.repos as { repo: string }[])
+            .map((r) => r.repo)
+            .sort((a, b) => Number(a === self) - Number(b === self));
+          setSelfRepo(self);
           setRepos(names);
-          setRepo((current) => current || names[0] || "");
+          setRepo((current) => current || names.find((n) => n !== self) || names[0] || "");
         } else {
           setRepoError(json?.error?.message ?? "Couldn't list your repos.");
         }
@@ -194,38 +204,58 @@ export function GcodeStudio() {
           {repos.length === 0 && <option value="">loading repos…</option>}
           {repos.map((r) => (
             <option key={r} value={r} className="bg-ink-950">
-              {r}
+              {r === selfRepo ? `${r} (this dashboard)` : r}
             </option>
           ))}
         </select>
+        {repo && repo === selfRepo && (
+          <span className="inline-flex items-center gap-1 text-[11px] text-flare-200">
+            <AlertTriangle className="h-3 w-3" /> this repo IS the dashboard
+          </span>
+        )}
         {repoError && <span className="text-xs text-flare-200 truncate">{repoError}</span>}
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.length === 0 && !busy ? (
           <div className="h-full grid place-items-center text-center">
-            <div>
-              <Rocket className="h-10 w-10 text-vital-300 mx-auto mb-4" />
-              <h2 className="text-2xl font-semibold text-white mb-2">
-                Welcome to <span className="text-vital-300">GCODE</span>
+            <div className="max-w-2xl w-full px-2">
+              <div
+                className="mx-auto mb-5 h-16 w-16 rounded-2xl grid place-items-center border border-vital-400/30
+                           bg-gradient-to-br from-vital-400/30 via-signal-400/15 to-transparent
+                           shadow-[0_0_40px_rgba(52,211,153,0.25)]"
+              >
+                <Rocket className="h-8 w-8 text-vital-200" />
+              </div>
+              <h2 className="text-3xl font-semibold tracking-tight mb-2 bg-gradient-to-r from-white via-vital-200 to-signal-300 bg-clip-text text-transparent">
+                Welcome to GCODE
               </h2>
-              <p className="text-sm text-zinc-400 mb-1 max-w-md mx-auto">
-                Describe the app. GCODE writes the code, opens the pull request, and runs it live in the
-                preview pane — built straight into your GitHub repo.
+              <p className="text-sm text-zinc-400 mb-6 max-w-md mx-auto leading-relaxed">
+                Describe the app you want. GCODE writes every file, opens the pull request, and runs it
+                live in the preview pane — straight into your GitHub repo.
               </p>
-              <p className="text-xs text-zinc-600 mb-4">Try one:</p>
-              <div className="flex flex-wrap gap-2 justify-center max-w-xl">
+              <div className="grid sm:grid-cols-2 gap-2.5 text-left">
                 {STARTERS.map((sx) => (
                   <button
-                    key={sx}
+                    key={sx.title}
                     type="button"
-                    onClick={() => send(sx)}
-                    className="px-3 py-1.5 rounded-full text-xs border border-white/10 text-zinc-300 hover:border-vital-400/40 hover:text-vital-200 transition-colors"
+                    onClick={() => send(sx.prompt)}
+                    className="group flex items-start gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3
+                               hover:border-vital-400/40 hover:bg-vital-400/[0.06] transition-colors"
                   >
-                    {sx}
+                    <span className="mt-0.5 h-8 w-8 shrink-0 rounded-lg grid place-items-center border border-white/10 bg-white/[0.04] group-hover:border-vital-400/30">
+                      <sx.icon className="h-4 w-4 text-vital-300" />
+                    </span>
+                    <span>
+                      <span className="block text-sm text-zinc-100 font-medium">{sx.title}</span>
+                      <span className="block text-xs text-zinc-500 mt-0.5 leading-snug">{sx.prompt}</span>
+                    </span>
                   </button>
                 ))}
               </div>
+              <p className="mt-5 font-mono text-[10px] uppercase tracking-wider text-zinc-600">
+                describe → built → PR → running live
+              </p>
             </div>
           </div>
         ) : (
@@ -233,7 +263,12 @@ export function GcodeStudio() {
             {messages.map((m, i) => {
               const labels = uniqueLabels(m.actions);
               return (
-                <div key={i} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
+                <div key={i} className={cn("flex gap-2.5", m.role === "user" ? "justify-end" : "justify-start")}>
+                  {m.role === "assistant" && (
+                    <span className="mt-1 h-7 w-7 shrink-0 rounded-lg grid place-items-center border border-vital-400/25 bg-gradient-to-br from-vital-400/25 to-transparent">
+                      <Rocket className="h-3.5 w-3.5 text-vital-200" />
+                    </span>
+                  )}
                   <div className={cn("max-w-[85%]", m.role === "user" ? "" : "w-full")}>
                     <div
                       className={cn(
@@ -261,10 +296,16 @@ export function GcodeStudio() {
               );
             })}
             {busy && (
-              <div className="flex justify-start">
-                <div className="rounded-2xl px-4 py-2.5 bg-white/[0.04] border border-white/[0.06] text-sm text-zinc-400 flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" /> GCODE is building — writing files, pushing,
-                  opening the PR…
+              <div className="flex justify-start gap-2.5">
+                <span className="mt-1 h-7 w-7 shrink-0 rounded-lg grid place-items-center border border-vital-400/25 bg-gradient-to-br from-vital-400/25 to-transparent">
+                  <Rocket className="h-3.5 w-3.5 text-vital-200 animate-pulse" />
+                </span>
+                <div className="rounded-2xl px-4 py-2.5 border border-vital-400/20 bg-gradient-to-r from-vital-400/[0.07] to-transparent text-sm text-zinc-300 flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-vital-300" />
+                  <span>
+                    GCODE is building
+                    <span className="text-zinc-500"> — writing files → pushing → opening the PR…</span>
+                  </span>
                 </div>
               </div>
             )}
