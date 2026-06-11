@@ -13,7 +13,6 @@ import {
   Settings,
   ArrowLeft,
   Sparkles,
-  Code2,
   Rocket,
 } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
@@ -40,7 +39,6 @@ export const NAV_ITEMS = [
   { href: "/dashboard/notifications", label: "Alerts", icon: Bell },
   { href: "/dashboard/copilot", label: "AI Copilot", icon: Sparkles },
   { href: "/dashboard/gcode", label: "GCODE", icon: Rocket },
-  { href: "/dashboard/code", label: "Code", icon: Code2 },
 ] as const;
 
 export function DashboardSidebar({ inboxUnread = 0 }: { inboxUnread?: number }) {
