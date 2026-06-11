@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pricing - GhimTech</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f8f9fc; color: #212529; }
+    header { text-align: center; padding: 4rem 1rem; }
+    h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+    p { color: #6c757d; }
+    .pricing-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.5rem; padding: 2rem; }
+    .tier { background: #fff; border: 1px solid #dee2e6; border-radius: 12px; padding: 2rem; width: 280px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; align-items: center; }
+    .tier h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .price { font-size: 2.25rem; font-weight: 700; margin: 1rem 0; }
+    ul { list-style: none; margin: 1rem 0; }
+    li { margin: 0.5rem 0; }
+    .btn { background: #007bff; color: #fff; text-decoration: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; transition: background 0.2s; }
+    .btn:hover { background: #0056b3; }
+    .highlight { border: 2px solid #007bff; transform: scale(1.05); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Choose Your Plan</h1>
+    <p>Flexible pricing designed for every stage of your growth.</p>
+  </header>
+  <section class="pricing-container">
+    <div class="tier">
+      <h2>Starter</h2>
+      <p class="price">$9<span>/mo</span></p>
+      <ul>
+        <li>Basic analytics</li>
+        <li>Email support</li>
+        <li>Up to 3 projects</li>
+      </ul>
+      <a href="#" class="btn">Get Started</a>
+    </div>
+    <div class="tier highlight">
+      <h2>Pro</h2>
+      <p class="price">$29<span>/mo</span></p>
+      <ul>
+        <li>Advanced insights</li>
+        <li>Priority support</li>
+        <li>Unlimited projects</li>
+      </ul>
+      <a href="#" class="btn">Upgrade Now</a>
+    </div>
+    <div class="tier">
+      <h2>Enterprise</h2>
+      <p class="price">$99<span>/mo</span></p>
+      <ul>
+        <li>Custom solutions</li>
+        <li>Dedicated manager</li>
+        <li>24/7 phone support</li>
+      </ul>
+      <a href="#" class="btn">Contact Sales</a>
+    </div>
+  </section>
+</body>
+</html>
