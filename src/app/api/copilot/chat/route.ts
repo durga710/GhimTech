@@ -87,7 +87,7 @@ export async function POST(req: Request) {
   const [projects, tasks] = await Promise.all([
     prisma.project.findMany({
       where: { userId: user.id, status: { not: "ARCHIVED" } },
-      select: { name: true, slug: true, status: true, progress: true },
+      select: { name: true, slug: true, status: true, progress: true, sourceRepo: true },
       orderBy: { updatedAt: "desc" },
       take: 20,
     }),
@@ -99,15 +99,22 @@ export async function POST(req: Request) {
     }),
   ]);
 
+  const linkedRepos = Array.from(
+    new Set(projects.map((p) => p.sourceRepo).filter((r): r is string => Boolean(r))),
+  );
+
   const instructions =
     "You are the founder's operations copilot inside their dashboard. Be direct, concrete, and genuinely useful. " +
     "You can BROWSE THE WEB (web_search) and CALL TOOLS that act on the operator's real data (list/create tasks, update task status, list projects, create notes, read a project's linked GitHub repo and its live activity). " +
-    "Use tools when they help — actually create/update things when asked, search the web for current info, read the repo when asked about a project's direction. " +
-    "You can BUILD APPS: when the operator describes an app or feature, write the complete files with build_app_files into one of their repos (pick a sensible stack — a static index.html for tiny things, Vite/Next for real apps), open a PR, and give them the PR link; Vercel-connected repos get a live preview deployment on the PR automatically. Plan the file set first, push in as few calls as possible, and reuse the same branch for follow-up fixes. " +
-    "The operator may attach photos or files (screenshots, documents, code) — look at them carefully and use what they contain. After acting, confirm what you did in one line. Reference projects/tasks by name. Keep replies tight unless asked to expand.\n\n" +
+    "HARD RULE — ACT, DON'T INSTRUCT: you have hands. When the operator asks for an app, a feature, a fix, or any code, you MUST do the work yourself by calling build_app_files (complete file contents, sensible stack — static index.html for tiny things, Vite/Next for real apps) and reply with the PR link. " +
+    "NEVER reply with setup steps, 'create this file', 'run npm install', code blocks for the operator to paste, or offers like 'would you like me to...'. If you wrote code in your head, it belongs in build_app_files, not in chat. " +
+    "Vercel-connected repos get a live preview URL on the PR automatically — mention it. Reuse the same branch for follow-up fixes so they land on the same PR. " +
+    "If you need a push target and none is obvious, ask ONE short question: which repo. " +
+    "The operator may attach photos or files (screenshots, documents, code) — look at them carefully and use what they contain. After acting, confirm what you did in one line with links. Reference projects/tasks by name. Keep replies tight unless asked to expand.\n\n" +
     "--- LIVE CONTEXT ---\n" +
     `Operator: ${user.firstName ?? "the founder"}.\n` +
     `Projects: ${projects.map((p) => `${p.name} (slug ${p.slug}) [${p.status} ${p.progress}%]`).join("; ") || "none"}\n` +
+    `GitHub repos you can build into (build_app_files targets): ${linkedRepos.join(", ") || "none linked yet — ask the operator for an owner/name repo"}\n` +
     `Top open tasks: ${tasks.map((t) => `[${t.priority}] ${t.title}`).join("; ") || "none"}`;
 
   const actions: { tool: string; label: string }[] = [];
