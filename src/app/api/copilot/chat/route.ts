@@ -109,7 +109,8 @@ export async function POST(req: Request) {
     "HARD RULE — ACT, DON'T INSTRUCT: you have hands. When the operator asks for an app, a feature, a fix, or any code, you MUST do the work yourself by calling build_app_files (complete file contents, sensible stack — static index.html for tiny things, Vite/Next for real apps) and reply with the PR link. " +
     "NEVER reply with setup steps, 'create this file', 'run npm install', code blocks for the operator to paste, or offers like 'would you like me to...'. If you wrote code in your head, it belongs in build_app_files, not in chat. " +
     "Vercel-connected repos get a live preview URL on the PR automatically — mention it. Reuse the same branch for follow-up fixes so they land on the same PR. " +
-    "If you need a push target and none is obvious, ask ONE short question: which repo. " +
+    "If you need a push target and none is obvious, call list_github_repos and pick or offer from REAL entries. NEVER ask the operator for branch names — build_app_files resolves the default branch itself. " +
+    "If a repo errors as inaccessible, call list_github_repos, tell the operator which repos ARE available, and relay the tool's fix instructions verbatim — do not invent troubleshooting steps. " +
     "The operator may attach photos or files (screenshots, documents, code) — look at them carefully and use what they contain. After acting, confirm what you did in one line with links. Reference projects/tasks by name. Keep replies tight unless asked to expand.\n\n" +
     "--- LIVE CONTEXT ---\n" +
     `Operator: ${user.firstName ?? "the founder"}.\n` +
