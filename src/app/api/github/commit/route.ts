@@ -12,7 +12,8 @@ import { requireUser } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { ok, apiErrors } from "@/lib/api-response";
 import { rateLimit } from "@/lib/rate-limit";
-import { pushFilesToRepo } from "@/lib/github";
+import { pushFilesToRepo, withGitHubToken } from "@/lib/github";
+import { prisma } from "@/lib/prisma";
 import {
   isValidBranchName,
   isValidRepoName,
@@ -39,6 +40,11 @@ export async function POST(req: Request) {
   const rl = rateLimit(`code.commit:${user.id}`, { limit: 60, windowMs: 60 * 60 * 1000 });
   if (!rl.success) return apiErrors.rateLimit(rl.reset);
 
+  const memberPrefs = await prisma.userPreferences.findUnique({
+    where: { userId: user.id },
+    select: { githubToken: true },
+  });
+
   let body: unknown;
   try {
     body = await req.json();
@@ -54,7 +60,7 @@ export async function POST(req: Request) {
   const check = validatePushFiles(files);
   if (!check.ok) return apiErrors.badRequest(check.error);
 
-  const result = await pushFilesToRepo(repo, { branch, message, files });
+  const result = await withGitHubToken(memberPrefs?.githubToken, () => pushFilesToRepo(repo, { branch, message, files }));
   if ("error" in result) return apiErrors.badRequest(result.error);
 
   await audit({

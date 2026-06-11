@@ -151,6 +151,12 @@ export const UserPreferencesUpdateSchema = z.object({
   notificationEmail: z.boolean().optional(),
   weeklyDigest: z.boolean().optional(),
   aiBriefEnabled: z.boolean().optional(),
+  aiProvider: z.enum(["openai", "anthropic", "local"]).optional(),
+  aiModel: z.string().max(80).optional(),
+  aiBaseUrl: z.union([z.string().url().max(200), z.literal(""), z.null()]).optional(),
+  githubToken: z
+    .union([z.string().regex(/^(ghp_|github_pat_)[A-Za-z0-9_]{20,}$/), z.literal(""), z.null()])
+    .optional(),
 });
 
 export type UserPreferencesUpdate = z.infer<typeof UserPreferencesUpdateSchema>;

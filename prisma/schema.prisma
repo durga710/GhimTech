@@ -21,7 +21,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 // ============== ENUMS ==============
@@ -101,6 +101,10 @@ model UserPreferences {
   notificationEmail  Boolean  @default(true)
   weeklyDigest       Boolean  @default(true)
   aiBriefEnabled     Boolean  @default(true)
+  aiProvider         String   @default("openai") // openai | anthropic | local
+  aiModel            String   @default("") // empty = provider default
+  aiBaseUrl          String? // OpenAI-compatible URL for local/self-hosted
+  githubToken        String? // member's own fine-grained PAT; commits/PRs use it
   updatedAt          DateTime @updatedAt
 }
 

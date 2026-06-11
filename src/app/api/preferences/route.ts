@@ -25,7 +25,9 @@ export async function GET() {
     update: {},
   });
 
-  return ok({ preferences: prefs });
+  // The GitHub token is a secret — report presence only, never the value.
+  const { githubToken, ...rest } = prefs;
+  return ok({ preferences: { ...rest, githubTokenSet: Boolean(githubToken) } });
 }
 
 export async function PATCH(req: Request) {
@@ -41,18 +43,24 @@ export async function PATCH(req: Request) {
   const parsed = UserPreferencesUpdateSchema.safeParse(body);
   if (!parsed.success) return apiErrors.validation(parsed.error);
 
+  // "" means clear for the nullable secrets/URLs.
+  const data = { ...parsed.data };
+  if (data.githubToken === "") data.githubToken = null;
+  if (data.aiBaseUrl === "") data.aiBaseUrl = null;
+
   const prefs = await prisma.userPreferences.upsert({
     where: { userId: user.id },
-    create: { userId: user.id, ...parsed.data },
-    update: parsed.data,
+    create: { userId: user.id, ...data },
+    update: data,
   });
 
   await audit({
     action: "preferences.update",
     actorId: user.id,
-    diff: parsed.data,
+    diff: { ...data, ...(data.githubToken !== undefined ? { githubToken: "[redacted]" } : {}) },
     req,
   });
 
-  return ok({ preferences: prefs });
+  const { githubToken, ...rest } = prefs;
+  return ok({ preferences: { ...rest, githubTokenSet: Boolean(githubToken) } });
 }

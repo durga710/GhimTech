@@ -9,8 +9,26 @@ import "server-only";
 
 const GH_API = "https://api.github.com";
 
+import { AsyncLocalStorage } from "node:async_hooks";
+
+/**
+ * Per-request GitHub token override. Team members can connect their own
+ * fine-grained PAT in Settings; routes wrap GitHub calls in
+ * withGitHubToken(userToken, ...) so commits/PRs come from THEIR account.
+ * Falls back to the workspace GITHUB_TOKEN env var.
+ */
+const tokenContext = new AsyncLocalStorage<string>();
+
+export function withGitHubToken<T>(token: string | null | undefined, fn: () => Promise<T>): Promise<T> {
+  return token ? tokenContext.run(token, fn) : fn();
+}
+
+function activeToken(): string | undefined {
+  return tokenContext.getStore() ?? process.env.GITHUB_TOKEN;
+}
+
 function ghHeaders(): Record<string, string> {
-  const token = process.env.GITHUB_TOKEN;
+  const token = activeToken();
   const headers: Record<string, string> = {
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
@@ -21,7 +39,7 @@ function ghHeaders(): Record<string, string> {
 }
 
 export function hasGitHubToken(): boolean {
-  return Boolean(process.env.GITHUB_TOKEN);
+  return Boolean(activeToken());
 }
 
 async function ghJson<T>(path: string): Promise<T | null> {

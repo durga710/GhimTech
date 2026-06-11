@@ -3,6 +3,7 @@ import { Settings as SettingsIcon } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "@/components/dashboard/settings/settings-form";
+import { IntegrationsSettings } from "@/components/dashboard/settings/integrations-settings";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -28,6 +29,16 @@ export default async function SettingsPage() {
           <p className="text-sm text-zinc-500">Preferences for {user.email}</p>
         </div>
       </header>
+
+      <IntegrationsSettings
+        initial={{
+          aiProvider: prefs.aiProvider,
+          aiModel: prefs.aiModel,
+          aiBaseUrl: prefs.aiBaseUrl ?? "",
+          githubTokenSet: Boolean(prefs.githubToken),
+        }}
+        anthropicAvailable={Boolean(process.env.ANTHROPIC_API_KEY)}
+      />
 
       <SettingsForm
         initial={{
