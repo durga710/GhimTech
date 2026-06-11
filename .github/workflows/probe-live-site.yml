@@ -29,6 +29,11 @@ jobs:
             jq -r '"overall: " + .status.description, (.incidents[]? | "INCIDENT: " + .name + " [" + .status + "]"), (.components[]? | select(.status != "operational") | "component degraded: " + .name + " = " + .status)' \
             || echo "couldn't fetch vercel status"
 
+      - name: Auth health on production
+        run: |
+          echo "GET https://ghimtech.org/api/health/auth"
+          curl -s --max-time 20 "https://ghimtech.org/api/health/auth" | head -c 500; echo
+
       - name: Identify served version per host
         run: |
           for url in \
