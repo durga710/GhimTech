@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FOUNDER } from "@/lib/content";
+import { COMPANY } from "@/lib/company";
 import { blurIn, fadeUp, staggerContainer } from "@/lib/motion";
 
 /**
@@ -27,29 +27,29 @@ export function ContactIntro() {
         >
           <motion.div variants={fadeUp} className="flex items-center gap-3 mb-8">
             <span className="status-dot status-dot-live" />
-            <span className="label-tactical">Contact · available for conversations</span>
+            <span className="label-tactical">Contact · we read every message</span>
           </motion.div>
 
           <motion.h1 variants={blurIn} className="font-display text-hero text-white">
-            <span className="block">Send me a</span>
-            <span className="block text-gradient-signal">message.</span>
+            <span className="block">Let&apos;s build something</span>
+            <span className="block text-gradient-signal">worth shipping.</span>
           </motion.h1>
 
           <motion.p
             variants={fadeUp}
             className="mt-8 text-xl text-zinc-300 leading-relaxed max-w-2xl"
           >
-            Whether you&apos;re a homecare agency curious about RayHealth, someone working
-            on something interesting, or just want to say hi — the form below is the
-            fastest way to reach me. I read every one.
+            Whether you&apos;re a customer evaluating our products, an investor, an engineer
+            who likes how we build, or a partner with a serious problem — this is the fastest
+            way to reach {COMPANY.name}. We read every message.
           </motion.p>
 
           <motion.div variants={fadeUp} className="mt-6">
             <a
-              href={`mailto:${FOUNDER.email}`}
+              href={`mailto:${COMPANY.email}`}
               className="font-mono text-sm text-signal-300 hover:text-signal-200 transition-colors"
             >
-              {FOUNDER.email}
+              {COMPANY.email}
             </a>
           </motion.div>
         </motion.div>
