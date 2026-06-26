@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Github, Rocket } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Github, Rocket } from "lucide-react";
 import { HELIX, HELIX_GITHUB } from "@/lib/products";
 import { blurIn, fadeUp, staggerContainer, easeOut } from "@/lib/motion";
 
@@ -34,7 +34,16 @@ export function HelixHero() {
           </motion.p>
 
           <motion.div variants={fadeUp} className="mt-9 flex flex-wrap items-center gap-3">
-            <Link href="/dashboard/gcode" className="btn-signal group">
+            <a
+              href={HELIX.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-signal group"
+            >
+              Visit {HELIX.urlLabel}
+              <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </a>
+            <Link href="/dashboard/gcode" className="btn-ghost group">
               <Rocket size={16} />
               Open the studio
               <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />

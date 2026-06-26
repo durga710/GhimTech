@@ -14,6 +14,9 @@ export const RAYHEALTH = {
   name: "RayHealthEVV™",
   tagline: "Care. Verified. Delivered.",
   status: "Production · Active",
+  /** The product's own standalone website. */
+  url: "https://rayhealthevv.com",
+  urlLabel: "rayhealthevv.com",
   oneLiner:
     "A unified operating system for home-care agencies — caregiver, coordinator, billing, payroll, scheduling, training, and compliance in one calm surface.",
   thesis: [
