@@ -21,7 +21,12 @@ export interface ProductSummary {
   oneLiner: string;
   description: string;
   accent: ProductAccent;
+  /** Internal deep-dive page on ghimtech.org. */
   href: string;
+  /** The product's own standalone website — each is a separate product. */
+  externalUrl: string;
+  /** Bare host shown as the external-link affordance, e.g. "helixstudio.org". */
+  externalLabel: string;
   featured: boolean;
   stack: readonly string[];
   metrics: readonly { label: string; value: string }[];
@@ -42,6 +47,8 @@ export const PRODUCTS: readonly ProductSummary[] = [
       "A premium AI development platform. Helix Studio turns intent into running software — it reads your repository, writes real code across many files, opens a reviewable pull request, and deploys a live preview beside the chat. Bring your own model and your own keys.",
     accent: "signal",
     href: "/products/helix-studio",
+    externalUrl: "https://helixstudio.org",
+    externalLabel: "helixstudio.org",
     featured: true,
     stack: ["Next.js", "OpenAI", "Anthropic", "GitHub", "Vercel", "Monaco"],
     metrics: [
@@ -68,6 +75,8 @@ export const PRODUCTS: readonly ProductSummary[] = [
       "An enterprise platform for the businesses that deliver home care. RayHealthEVV brings owner-first visibility, invitation-only onboarding, EVV visit verification, and audit-grade compliance posture into a single command center — designed to support EVV and state Medicaid requirements.",
     accent: "vital",
     href: "/products/rayhealth-evv",
+    externalUrl: "https://rayhealthevv.com",
+    externalLabel: "rayhealthevv.com",
     featured: true,
     stack: ["Next.js", "Supabase", "PostgreSQL", "AI Copilot", "iOS", "Android"],
     metrics: [
@@ -96,6 +105,9 @@ export const HELIX = {
   name: "Helix Studio",
   wordmark: "Helix",
   status: "Live · Beta",
+  /** The product's own standalone website. */
+  url: "https://helixstudio.org",
+  urlLabel: "helixstudio.org",
   tagline: "From prompt to production.",
   oneLiner:
     "The AI development platform. Describe what you want; Helix builds it, opens a pull request, and ships a live preview — in real repositories, with the model you choose.",

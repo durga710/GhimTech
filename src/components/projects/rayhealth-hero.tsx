@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { ArrowUpRight } from "lucide-react";
 import { RAYHEALTH } from "@/lib/projects";
 import { blurIn, fadeUp, staggerContainer } from "@/lib/motion";
 
@@ -69,6 +70,18 @@ export function RayHealthHero() {
             {RAYHEALTH.thesis.map((p, i) => (
               <p key={i}>{p}</p>
             ))}
+          </motion.div>
+
+          <motion.div variants={fadeUp} className="mt-9 flex flex-wrap items-center gap-3">
+            <a
+              href={RAYHEALTH.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-vital group"
+            >
+              Visit {RAYHEALTH.urlLabel}
+              <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </a>
           </motion.div>
         </motion.div>
 
