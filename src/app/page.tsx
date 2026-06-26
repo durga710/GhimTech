@@ -1,38 +1,66 @@
 import { TopNav } from "@/components/shared/top-nav";
 import { SiteFooter } from "@/components/shared/site-footer";
 import { AmbientBackdrop } from "@/components/landing/ambient-backdrop";
-import { Hero } from "@/components/landing/hero";
-import { ValuesSection } from "@/components/landing/values-section";
-import { FeaturedProject } from "@/components/landing/featured-project";
-import { ClosingCta } from "@/components/landing/closing-cta";
+import { CompanyHero } from "@/components/landing/company-hero";
+import { FocusAreas } from "@/components/landing/focus-areas";
+import { ProductsShowcase } from "@/components/landing/products-showcase";
+import { CultureSection } from "@/components/landing/culture-section";
+import { CompanyCta } from "@/components/landing/company-cta";
+import { COMPANY, SOCIAL } from "@/lib/company";
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://ghimtech.org/#organization",
+      name: COMPANY.name,
+      url: "https://ghimtech.org",
+      email: COMPANY.email,
+      description: COMPANY.mission,
+      foundingDate: COMPANY.founded,
+      sameAs: [SOCIAL.github, SOCIAL.linkedin],
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://ghimtech.org/#website",
+      url: "https://ghimtech.org",
+      name: COMPANY.name,
+      publisher: { "@id": "https://ghimtech.org/#organization" },
+    },
+  ],
+};
 
 /**
- * Landing — the front door of Durga OS.
+ * Home — the front door of GhimTech.
  *
  * Composition (top → bottom):
  *   1. TopNav (fixed)
- *   2. Hero with ambient backdrop
- *   3. Values — operating principles
- *   4. Featured project — RayHealthEVV
- *   5. Closing CTA
- *   6. Footer
- *
- * Each section is independently scrollable and reveals on viewport entry.
+ *   2. Company hero + ambient backdrop + product roster + ticker
+ *   3. What we build — focus areas
+ *   4. Our products — Helix Studio + RayHealthEVV
+ *   5. How we build — engineering culture + stats
+ *   6. Closing CTA
+ *   7. Footer
  */
-export default function LandingPage() {
+export default function HomePage() {
   return (
     <main className="relative overflow-x-clip">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <TopNav />
 
-      {/* Hero with its own ambient layer so the backdrop doesn't bleed into the whole page */}
       <div className="relative">
         <AmbientBackdrop />
-        <Hero />
+        <CompanyHero />
       </div>
 
-      <ValuesSection />
-      <FeaturedProject />
-      <ClosingCta />
+      <FocusAreas />
+      <ProductsShowcase />
+      <CultureSection />
+      <CompanyCta />
       <SiteFooter />
     </main>
   );

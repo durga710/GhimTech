@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
-import { FOUNDER } from "@/lib/content";
+import { GeistSans } from "geist/font/sans";
+import { JetBrains_Mono } from "next/font/google";
+import { COMPANY } from "@/lib/company";
 import "./globals.css";
 
-// Editorial type system — Fraunces (display serif) + Hanken Grotesk (body)
-// + IBM Plex Mono (labels/data). Self-hosted via next/font.
-const fontDisplay = Fraunces({ subsets: ["latin"], variable: "--font-display", display: "swap" });
-const fontSans = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
-const fontMono = IBM_Plex_Mono({
+// Type system — Geist (display + body) + JetBrains Mono (labels + data).
+// Clean, engineering-credible sans in the lineage of Stripe / Linear / Vercel.
+// Geist ships via the `geist` package; JetBrains Mono via next/font.
+const fontMono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-mono",
@@ -17,22 +17,24 @@ const fontMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://ghimtech.org"),
   title: {
-    default: `Ghimtech — ${FOUNDER.name} · Founder & USMC Veteran`,
-    template: `%s · Ghimtech`,
+    default: `${COMPANY.name} — ${COMPANY.tagline}`,
+    template: `%s · ${COMPANY.name}`,
   },
-  description: FOUNDER.bio,
+  description: COMPANY.mission,
   keywords: [
-    "Durga Ghimeray",
-    "Ghimtech",
+    "GhimTech",
+    "AI software",
+    "Helix Studio",
     "RayHealthEVV",
-    "EVV",
-    "home care",
-    "founder",
-    "USMC veteran",
-    "healthcare operations",
+    "AI app builder",
+    "healthcare technology",
+    "developer tools",
+    "business automation",
+    "Durga Ghimeray",
   ],
-  authors: [{ name: FOUNDER.name }],
-  creator: FOUNDER.name,
+  authors: [{ name: COMPANY.name }],
+  creator: COMPANY.name,
+  publisher: COMPANY.name,
   // Brand identity surfaces — favicon + Apple touch icon + OG image
   icons: {
     icon: [
@@ -48,22 +50,22 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://ghimtech.org",
-    title: `Ghimtech — Building healthcare operations, calmly.`,
-    description: FOUNDER.bio,
-    siteName: "Ghimtech",
+    title: `${COMPANY.name} — ${COMPANY.tagline}`,
+    description: COMPANY.mission,
+    siteName: COMPANY.name,
     images: [
       {
         url: "/brand/og-image.svg",
         width: 1200,
         height: 630,
-        alt: "Ghimtech — Durga Ghimeray, Founder",
+        alt: `${COMPANY.name} — ${COMPANY.tagline}`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: `Ghimtech — ${FOUNDER.name}`,
-    description: FOUNDER.bio,
+    title: `${COMPANY.name} — ${COMPANY.tagline}`,
+    description: COMPANY.mission,
     images: ["/brand/og-image.svg"],
   },
   robots: { index: true, follow: true },
@@ -80,7 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable} dark`}
+      className={`${GeistSans.variable} ${fontMono.variable} dark`}
       suppressHydrationWarning
     >
       <body className="font-sans">

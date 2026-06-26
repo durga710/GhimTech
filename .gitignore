@@ -57,3 +57,4 @@ Thumbs.db
 # Editor backups
 *.swp
 *~
+.env*

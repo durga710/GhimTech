@@ -69,16 +69,17 @@ const config: Config = {
         },
       },
       fontFamily: {
-        // Editorial: Fraunces (display serif) + Hanken Grotesk (body) + IBM Plex Mono
-        display: ["var(--font-display)", "Georgia", "serif"],
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        // Geist (display + body) + JetBrains Mono (labels + data).
+        // Geist's variable is set by the `geist` package on <html>.
+        display: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       fontSize: {
-        // Tighter, more editorial scale
-        "hero": ["clamp(3rem, 8vw, 6.5rem)", { lineHeight: "0.95", letterSpacing: "-0.04em", fontWeight: "600" }],
-        "display": ["clamp(2rem, 5vw, 3.75rem)", { lineHeight: "1", letterSpacing: "-0.03em", fontWeight: "600" }],
-        "title": ["clamp(1.5rem, 3vw, 2.25rem)", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        // Tight, premium sans scale — tuned for Geist at display weights.
+        "hero": ["clamp(3rem, 8vw, 6.5rem)", { lineHeight: "0.95", letterSpacing: "-0.045em", fontWeight: "600" }],
+        "display": ["clamp(2rem, 5vw, 3.75rem)", { lineHeight: "1.02", letterSpacing: "-0.035em", fontWeight: "600" }],
+        "title": ["clamp(1.5rem, 3vw, 2.25rem)", { lineHeight: "1.12", letterSpacing: "-0.025em", fontWeight: "600" }],
       },
       letterSpacing: {
         tightest: "-0.05em",

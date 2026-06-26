@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 /* ==========================================================================
-   Durga OS — Design tokens
+   GhimTech — Design tokens
    Matte black carbon base, electric signal blue, vital emerald.
+   Type: Geist (display + body) · JetBrains Mono (labels + data).
    ========================================================================== */
 
 @layer base {
@@ -137,6 +138,35 @@
            hover:bg-white/[0.08] hover:border-white/20 hover:-translate-y-px;
   }
 
+  /* Button — vital emerald (secondary product accent) */
+  .btn-vital {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5
+           text-sm font-medium text-ink-950 transition-all duration-300
+           bg-gradient-to-b from-vital-300 to-vital-400
+           shadow-glow-vital
+           hover:shadow-[0_0_60px_-10px_rgba(31,226,148,0.7)] hover:-translate-y-px
+           active:translate-y-0;
+  }
+
+  /* Status pill — small rounded label with a live dot */
+  .pill {
+    @apply inline-flex items-center gap-2 rounded-full px-3 py-1
+           bg-white/[0.04] border border-white/10
+           font-mono text-[11px] uppercase tracking-tactical text-zinc-300;
+  }
+
+  /* Stack chip — tech tags */
+  .chip {
+    @apply inline-flex items-center rounded-full px-2.5 py-1
+           bg-white/[0.03] border border-white/[0.08]
+           font-mono text-[11px] text-zinc-400;
+  }
+
+  /* Eyebrow — section kicker above a heading */
+  .eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-tactical text-signal-300;
+  }
+
   /* Corner tick marks — military HUD bracket */
   .hud-corners::before,
   .hud-corners::after,
@@ -172,6 +202,8 @@
     mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
     -webkit-mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
   }
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
   /* Honor user motion prefs */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {

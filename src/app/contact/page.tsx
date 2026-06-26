@@ -8,10 +8,10 @@ import { WorldMap } from "@/components/contact/world-map";
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Send Durga a message. Open to conversations with homecare agencies, partners, and people working on adjacent problems.",
+    "Get in touch with GhimTech. We work with customers, investors, engineers, and partners — and we read every message.",
   openGraph: {
-    title: "Contact · Durga Ghimeray",
-    description: "Open to conversations. Send a message.",
+    title: "Contact GhimTech",
+    description: "Customers, investors, engineers, partners — let's talk.",
     url: "https://ghimtech.org/contact",
   },
 };

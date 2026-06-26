@@ -16,6 +16,14 @@ const nextConfig: NextConfig = {
   },
   poweredByHeader: false,
   reactStrictMode: true,
+  // Retire the old founder-era IA — point legacy URLs at the new company pages.
+  async redirects() {
+    return [
+      { source: "/projects", destination: "/products", permanent: true },
+      { source: "/projects/rayhealth-evv", destination: "/products/rayhealth-evv", permanent: true },
+      { source: "/experience", destination: "/about", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;
