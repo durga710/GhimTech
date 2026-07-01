@@ -27,21 +27,21 @@ export function ContactIntro() {
         >
           <motion.div variants={fadeUp} className="flex items-center gap-3 mb-8">
             <span className="status-dot status-dot-live" />
-            <span className="label-tactical">Contact · available for conversations</span>
+            <span className="label-tactical">Contact · GhimTech</span>
           </motion.div>
 
           <motion.h1 variants={blurIn} className="font-display text-hero text-white">
-            <span className="block">Send me a</span>
-            <span className="block text-gradient-signal">message.</span>
+            <span className="block">Bring a serious</span>
+            <span className="block text-gradient-signal">problem.</span>
           </motion.h1>
 
           <motion.p
             variants={fadeUp}
             className="mt-8 text-xl text-zinc-300 leading-relaxed max-w-2xl"
           >
-            Whether you&apos;re a homecare agency curious about RayHealth, someone working
-            on something interesting, or just want to say hi — the form below is the
-            fastest way to reach me. I read every one.
+            GhimTech works with agency owners, partners, engineers, and technical
+            buyers who need software they can trust under pressure. The form below
+            is the fastest way to start that conversation — every message gets read.
           </motion.p>
 
           <motion.div variants={fadeUp} className="mt-6">

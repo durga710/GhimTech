@@ -5,12 +5,13 @@ import { ProjectsIndexHero } from "@/components/projects/projects-index-hero";
 import { ProjectsIndexFeatured } from "@/components/projects/projects-index-featured";
 
 export const metadata: Metadata = {
-  title: "Projects",
+  title: "Products",
   description:
-    "One mission, built end-to-end. RayHealthEVV™ — a unified operating system for home-care agencies.",
+    "The GhimTech product portfolio: RayHealthEVV™, a home-care operations platform, and Helix Studio, a prompt-to-production developer platform direction.",
   openGraph: {
-    title: "Projects · Durga Ghimeray",
-    description: "RayHealthEVV™ — home-care operations, unified.",
+    title: "Products · GhimTech",
+    description:
+      "RayHealthEVV™ home-care operations and the Helix Studio developer platform direction.",
     url: "https://ghimtech.org/projects",
   },
 };

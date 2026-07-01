@@ -108,7 +108,7 @@ function CommandGlassMockup() {
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-vital-400 animate-pulse-vital" />
             <span className="label-tactical text-vital-300">
-              Command Glass · Owner view
+              RayHealthEVV · Owner view
             </span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -131,7 +131,7 @@ function CommandGlassMockup() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 + i * 0.12, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="glass-panel p-3"
+                className="glass-panel-strong p-3"
               >
                 <div className="label-tactical text-[9px]">{kpi.l}</div>
                 <div className="mt-1 font-display text-2xl text-white tabular-nums">{kpi.v}</div>
@@ -154,7 +154,7 @@ function CommandGlassMockup() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1, duration: 0.8 }}
-              className="col-span-3 glass-panel p-4 h-32 relative overflow-hidden"
+              className="col-span-3 glass-panel-strong p-4 h-32 relative overflow-hidden"
             >
               <div className="flex items-center justify-between mb-1">
                 <div className="label-tactical text-[9px]">Sprint shipped · last 8w</div>
@@ -191,7 +191,7 @@ function CommandGlassMockup() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.2, duration: 0.8 }}
-              className="col-span-2 glass-panel p-4 h-32 space-y-2"
+              className="col-span-2 glass-panel-strong p-4 h-32 space-y-2"
             >
               <div className="label-tactical text-[9px]">Live activity</div>
               {[
@@ -223,7 +223,7 @@ function CommandGlassMockup() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.4, duration: 0.8 }}
-            className="glass-panel p-4"
+            className="glass-panel-strong p-4"
           >
             <div className="flex items-center justify-between mb-2">
               <div className="label-tactical text-[9px]">Coordinator queue</div>
@@ -265,12 +265,6 @@ function CommandGlassMockup() {
           </motion.div>
         </div>
 
-        {/* Scanline */}
-        <motion.div
-          className="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-signal-400/40 to-transparent"
-          animate={{ y: ["0%", "100%"] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-        />
       </div>
     </motion.div>
   );

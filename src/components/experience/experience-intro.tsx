@@ -37,15 +37,15 @@ export function ExperienceIntro() {
             variants={blurIn}
             className="font-display text-hero text-white"
           >
-            <span className="block">A timeline of</span>
-            <span className="block text-gradient-signal">execution.</span>
+            <span className="block">A record of service,</span>
+            <span className="block text-gradient-signal">systems, and execution.</span>
           </motion.h1>
 
           <motion.p
             variants={fadeUp}
             className="mt-8 text-xl text-zinc-300 leading-relaxed max-w-2xl"
           >
-            From Marine Corps service to founding RayHealth — the same operating
+            From Marine Corps service to founding GhimTech — the same operating
             standard runs the length of the line. Below is the record.
           </motion.p>
         </motion.div>

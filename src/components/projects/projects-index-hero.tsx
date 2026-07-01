@@ -30,25 +30,26 @@ export function ProjectsIndexHero() {
         >
           <motion.div variants={fadeUp} className="flex items-center gap-3 mb-8">
             <span className="status-dot status-dot-live" />
-            <span className="label-tactical">Projects · current work</span>
+            <span className="label-tactical">Products · GhimTech</span>
           </motion.div>
 
           <motion.h1
             variants={blurIn}
             className="font-display text-hero text-white max-w-5xl"
           >
-            <span className="block">One mission.</span>
-            <span className="block text-gradient-vital">Built end-to-end.</span>
+            <span className="block">Real products.</span>
+            <span className="block text-gradient-vital">Built deeply.</span>
           </motion.h1>
 
           <motion.p
             variants={fadeUp}
             className="mt-8 max-w-2xl text-xl text-zinc-300 leading-relaxed"
           >
-            Rather than a portfolio of shallow side projects, the focus is one
-            venture, built deeply:{" "}
-            <strong className="text-white font-medium">RayHealthEVV™</strong>.
-            Below is the platform in detail.
+            The GhimTech portfolio:{" "}
+            <strong className="text-white font-medium">RayHealthEVV™</strong> running
+            home-care operations today, and{" "}
+            <strong className="text-white font-medium">Helix Studio</strong>, the
+            prompt-to-production developer platform direction. Below is each in detail.
           </motion.p>
 
           <motion.div variants={fadeUp} className="mt-10">

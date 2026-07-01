@@ -47,15 +47,15 @@ export function AboutIntro() {
           <div className="lg:col-span-8">
             <motion.div variants={fadeUp} className="flex items-center gap-3 mb-8">
               <span className="status-dot status-dot-live" />
-              <span className="label-tactical">About · operator dossier</span>
+              <span className="label-tactical">About · GhimTech</span>
             </motion.div>
 
             <motion.h1
               variants={blurIn}
               className="font-display text-hero text-white"
             >
-              <span className="block">A founder built</span>
-              <span className="block text-gradient-signal">on discipline.</span>
+              <span className="block">Founder-led software,</span>
+              <span className="block text-gradient-signal">built with discipline.</span>
             </motion.h1>
 
             <motion.p
@@ -63,7 +63,7 @@ export function AboutIntro() {
               className="mt-8 max-w-2xl text-xl text-zinc-300 leading-relaxed"
             >
               From the mountains of Nepal to the United States Marine Corps to building
-              healthcare operating systems — the through-line is the same: build the
+              AI-native software systems — the through-line is the same: build the
               boring fundamentals exceptionally well, and trust compounds.
             </motion.p>
           </div>
@@ -71,7 +71,7 @@ export function AboutIntro() {
           {/* RIGHT: Identity readout — HUD-style mini panel */}
           <motion.aside
             variants={fadeUp}
-            className="lg:col-span-4 glass-panel p-6 relative hud-corners"
+            className="lg:col-span-4 glass-panel-strong p-6 relative hud-corners"
           >
             <span className="hud-corner-tl" aria-hidden />
             <span className="hud-corner-br" aria-hidden />
