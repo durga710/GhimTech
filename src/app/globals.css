@@ -5,6 +5,7 @@
 /* ==========================================================================
    Durga OS — Design tokens
    Matte black carbon base, electric signal blue, vital emerald.
+   Cinematic density layered on top.
    ========================================================================== */
 
 @layer base {
@@ -14,7 +15,7 @@
     --muted: 26 31 43;
     --muted-foreground: 138 146 161;
     --border: 255 255 255;
-    --ring: 58 164 255;
+    --ring: 86 168 255;
     --radius: 0.875rem;
   }
 
@@ -26,13 +27,15 @@
     @apply bg-ink-950 text-foreground antialiased;
     color-scheme: dark;
     font-feature-settings: "ss01", "cv11", "calt";
+    scroll-behavior: smooth;
   }
 
   body {
     @apply bg-ink-950 text-zinc-100 selection:bg-signal-400/30 selection:text-white;
     background-image:
-      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(58, 164, 255, 0.08), transparent 60%),
-      radial-gradient(ellipse 60% 50% at 100% 100%, rgba(31, 226, 148, 0.04), transparent 60%);
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(86, 168, 255, 0.14), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 100% 100%, rgba(49, 227, 154, 0.07), transparent 60%),
+      radial-gradient(ellipse 40% 30% at 0% 100%, rgba(255, 111, 135, 0.04), transparent 65%);
     background-attachment: fixed;
   }
 
@@ -45,16 +48,16 @@
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.08);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(58, 164, 255, 0.3); background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(86, 168, 255, 0.34); background-clip: padding-box; }
 
   /* Focus rings — signal blue, never default browser blue */
   :focus-visible {
-    @apply outline-none ring-2 ring-signal-400/60 ring-offset-2 ring-offset-ink-950;
+    @apply outline-none ring-2 ring-signal-300/70 ring-offset-2 ring-offset-ink-950;
   }
 }
 
@@ -64,23 +67,26 @@
      Layered: tinted carbon + backdrop blur + inner highlight.
      ========================================================== */
   .glass-panel {
-    @apply relative rounded-2xl bg-ink-800/40 backdrop-blur-xl;
+    @apply relative overflow-hidden rounded-[28px] bg-ink-800/45 backdrop-blur-xl;
     background-image:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 40%),
-      linear-gradient(180deg, transparent 70%, rgba(255, 255, 255, 0.015));
+      linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 40%),
+      radial-gradient(circle at top, rgba(86, 168, 255, 0.05), transparent 58%),
+      linear-gradient(180deg, transparent 70%, rgba(255, 255, 255, 0.02));
     box-shadow:
       0 1px 0 0 rgba(255, 255, 255, 0.06) inset,
-      0 0 0 1px rgba(255, 255, 255, 0.06),
+      0 0 0 1px rgba(255, 255, 255, 0.07),
       0 30px 60px -30px rgba(0, 0, 0, 0.8);
   }
 
   .glass-panel-strong {
-    @apply relative rounded-2xl bg-ink-800/60 backdrop-blur-2xl;
+    @apply relative overflow-hidden rounded-[32px] bg-ink-800/[0.68] backdrop-blur-2xl;
     background-image:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 50%);
+      linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 48%),
+      radial-gradient(circle at top right, rgba(86, 168, 255, 0.08), transparent 52%),
+      radial-gradient(circle at bottom left, rgba(49, 227, 154, 0.04), transparent 50%);
     box-shadow:
       0 1px 0 0 rgba(255, 255, 255, 0.08) inset,
-      0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 0 0 1px rgba(255, 255, 255, 0.09),
       0 40px 80px -40px rgba(0, 0, 0, 0.9);
   }
 
@@ -113,15 +119,20 @@
 
   /* Hairline divider — used everywhere for structural rhythm */
   .hairline {
-    @apply h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent;
+    @apply h-px w-full bg-gradient-to-r from-transparent via-white/[0.12] to-transparent;
   }
   .hairline-v {
-    @apply w-px h-full bg-gradient-to-b from-transparent via-white/10 to-transparent;
+    @apply w-px h-full bg-gradient-to-b from-transparent via-white/[0.12] to-transparent;
+  }
+
+  .control-chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5
+           font-mono text-[10px] uppercase tracking-tactical text-zinc-300 backdrop-blur-md;
   }
 
   /* Button — primary signal */
   .btn-signal {
-    @apply relative inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5
+    @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full px-5 py-2.5
            text-sm font-medium text-white transition-all duration-300
            bg-gradient-to-b from-signal-400 to-signal-500
            shadow-glow-signal
@@ -133,8 +144,35 @@
   .btn-ghost {
     @apply relative inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5
            text-sm font-medium text-zinc-200 transition-all duration-300
-           bg-white/[0.04] backdrop-blur-md border border-white/10
-           hover:bg-white/[0.08] hover:border-white/20 hover:-translate-y-px;
+           bg-white/[0.05] backdrop-blur-md border border-white/10
+           hover:bg-white/[0.09] hover:border-white/20 hover:-translate-y-px;
+  }
+
+  .surface-premium {
+    @apply relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.035] shadow-panel backdrop-blur-xl;
+  }
+
+  .surface-subtle {
+    @apply relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.025];
+  }
+
+  .section-band {
+    @apply relative py-24 lg:py-32;
+  }
+
+  .section-kicker {
+    @apply font-mono text-[11px] uppercase tracking-tactical text-signal-200;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .btn-vital {
+    @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full px-5 py-2.5
+           text-sm font-medium text-ink-950 transition-all duration-300
+           bg-gradient-to-b from-vital-200 to-vital-400
+           shadow-glow-vital hover:-translate-y-px active:translate-y-0;
   }
 
   /* Corner tick marks — military HUD bracket */

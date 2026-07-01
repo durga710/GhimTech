@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { readFileSync } from "node:fs";
 import {
   COMPANY,
   FOUNDER,
@@ -47,5 +48,16 @@ describe("marketing content model", () => {
     assert.equal(HOME_SIGNALS.length >= 5, true);
     assert.equal(TECHNOLOGY_PILLARS.length >= 6, true);
     assert.equal(FOUNDER.shortBio.includes("USMC Veteran"), true);
+  });
+});
+
+// layout.tsx cannot be imported under the plain node test runner (it pulls in
+// globals.css and next/font), so metadata is asserted from source text instead.
+describe("root metadata", () => {
+  it("uses the new company positioning in SEO metadata", () => {
+    const layout = readFileSync("src/app/layout.tsx", "utf8");
+    assert.match(layout, /description:\s*COMPANY\.positioning/);
+    assert.match(layout, /new URL\("https:\/\/ghimtech\.org"\)/);
+    assert.match(COMPANY.positioning, /AI-native software company/i);
   });
 });
