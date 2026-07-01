@@ -46,12 +46,12 @@ export function AlertsList({ initialNotifications }: { initialNotifications: Das
   }
 
   if (items.length === 0) {
-    return <div className="glass-panel p-12 text-center text-sm text-zinc-400">No alerts.</div>;
+    return <div className="surface-subtle p-10 text-center text-sm text-zinc-400">No alerts.</div>;
   }
 
   return (
-    <section className="glass-panel p-6">
-      <header className="flex items-center justify-between mb-5">
+    <section className="surface-premium p-6">
+      <header className="mb-5 flex items-center justify-between">
         <span className="label-tactical">{items.length} notifications</span>
         {unread > 0 && (
           <button
@@ -73,19 +73,19 @@ export function AlertsList({ initialNotifications }: { initialNotifications: Das
               key={n.id}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: Math.min(i * 0.03, 0.3), duration: 0.4 }}
-              onClick={() => markRead(n)}
-              className={cn(
-                "relative flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer",
+            transition={{ delay: Math.min(i * 0.03, 0.3), duration: 0.4 }}
+            onClick={() => markRead(n)}
+            className={cn(
+                "relative flex items-start gap-3 rounded-2xl border p-3 transition-all cursor-pointer",
                 n.unread
-                  ? "border-white/[0.08] bg-white/[0.015] hover:border-white/[0.16]"
-                  : "border-transparent hover:bg-white/[0.02]"
+                  ? "border-white/[0.08] bg-white/[0.018] hover:border-white/[0.16] hover:bg-white/[0.03]"
+                  : "border-transparent hover:bg-white/[0.03]"
               )}
-            >
+          >
               {n.unread && (
                 <span aria-hidden className="absolute left-0 top-3 bottom-3 w-px rounded-full bg-signal-400" />
               )}
-              <div className={cn("shrink-0 h-8 w-8 rounded-lg grid place-items-center border", k.bg)}>
+              <div className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-lg border", k.bg)}>
                 <Icon className={cn("h-3.5 w-3.5", k.color)} />
               </div>
               <div className="flex-1 min-w-0">

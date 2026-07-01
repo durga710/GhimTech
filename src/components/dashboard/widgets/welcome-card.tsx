@@ -38,11 +38,9 @@ export function WelcomeCard({ firstName, summary }: WelcomeCardProps) {
       initial="hidden"
       animate="visible"
       variants={staggerContainer}
-      className="glass-panel-strong p-8 relative overflow-hidden hud-corners"
+      className="surface-premium operating-console p-6 relative overflow-hidden lg:p-7"
     >
-      <span className="hud-corner-tl" aria-hidden />
-      <span className="hud-corner-br" aria-hidden />
-
+            
       {/* Subtle animated hairline at top */}
       <motion.div
         className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-signal-400/60 to-transparent"
@@ -57,33 +55,37 @@ export function WelcomeCard({ firstName, summary }: WelcomeCardProps) {
                    bg-[radial-gradient(circle,rgba(58,164,255,0.10),transparent_70%)] blur-2xl"
       />
 
-      <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-12">
         {/* LEFT — Greeting + headline */}
         <motion.div variants={fadeUp} className="lg:col-span-7">
-          <div className="flex items-center gap-3 mb-5">
+          <div className="flex flex-wrap items-center gap-3 mb-5">
             <span className="status-dot status-dot-live" />
             <span className="label-tactical">Morning brief · auto-generated</span>
+            <span className="control-chip">
+              <Sparkles className="h-3 w-3 text-signal-300" />
+              Live synthesis
+            </span>
           </div>
 
-          <h1 className="font-display text-4xl lg:text-5xl text-white tracking-tight leading-[1.05]">
+          <h1 className="font-display text-[clamp(2.6rem,5vw,4.8rem)] leading-[0.96] tracking-tightest text-white">
             {greeting},{" "}
             <span className="text-gradient-signal">{displayName}</span>.
           </h1>
 
-          <p className="mt-6 text-lg text-zinc-300 leading-relaxed">
+          <p className="mt-6 text-lg leading-relaxed text-zinc-300">
             {summary.headline}
           </p>
 
-          <p className="mt-4 text-sm text-zinc-400 leading-relaxed">
+          <p className="mt-4 text-sm leading-relaxed text-zinc-400">
             {summary.body}
           </p>
         </motion.div>
 
         {/* RIGHT — Highlights checklist */}
         <motion.div variants={fadeUp} className="lg:col-span-5">
-          <div className="glass-panel p-5 h-full">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-7 w-7 rounded-lg bg-signal-400/15 border border-signal-400/30 grid place-items-center">
+          <div className="surface-subtle h-full p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <div className="grid h-7 w-7 place-items-center rounded-lg border border-signal-400/30 bg-signal-400/15">
                 <Sparkles className="h-3.5 w-3.5 text-signal-300" />
               </div>
               <span className="label-tactical text-signal-300">

@@ -64,11 +64,10 @@ export function ShipActivityChart({ data }: ShipActivityChartProps) {
   }, [data]);
 
   return (
-    <section className="glass-panel p-6 relative hud-corners">
-      <span className="hud-corner-tl" aria-hidden />
-      <span className="hud-corner-br" aria-hidden />
+    <section className="surface-premium relative p-6">
+                  <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-vital-400/60 to-transparent" />
 
-      <header className="flex items-start justify-between mb-5">
+      <header className="mb-5 flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Activity className="h-4 w-4 text-vital-300" />
@@ -97,7 +96,7 @@ export function ShipActivityChart({ data }: ShipActivityChartProps) {
       </header>
 
       {/* Chart */}
-      <div className="relative h-40">
+      <div className="relative h-44">
         <svg
           className="w-full h-full overflow-visible"
           viewBox="0 0 100 100"

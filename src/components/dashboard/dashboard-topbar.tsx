@@ -39,15 +39,18 @@ export function DashboardTopbar() {
       initial={{ y: -12, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="sticky top-0 z-30 backdrop-blur-xl bg-ink-950/60 border-b border-white/[0.06]"
+      className="sticky top-0 z-30 border-b border-white/[0.06] bg-ink-950/70 backdrop-blur-2xl"
     >
-      <div className="flex items-center gap-3 px-6 py-3">
+      <div className="relative flex items-center gap-3 px-6 py-3">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
+        />
         {/* Search */}
         <button
           type="button"
-          className="group flex items-center gap-2.5 flex-1 max-w-md px-3 py-2 rounded-lg
-                     bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12]
-                     text-left transition-colors"
+          className="group flex flex-1 max-w-md items-center gap-2.5 rounded-full border border-white/[0.06]
+                     bg-white/[0.04] px-4 py-2.5 text-left transition-all hover:border-white/[0.14] hover:bg-white/[0.06]"
         >
           <Search className="h-4 w-4 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
           <span className="text-sm text-zinc-500">Search projects, tasks…</span>
@@ -61,7 +64,7 @@ export function DashboardTopbar() {
         <div className="flex-1" />
 
         {/* Live clock */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/[0.02] border border-white/[0.04]">
+        <div className="hidden items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 md:flex">
           <span className="status-dot status-dot-live" />
           <span className="font-mono text-xs text-zinc-300 tabular-nums">{now}</span>
         </div>
@@ -69,9 +72,8 @@ export function DashboardTopbar() {
         {/* Notifications */}
         <button
           type="button"
-          className="relative grid place-items-center h-9 w-9 rounded-lg
-                     bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12]
-                     text-zinc-400 hover:text-white transition-colors"
+          className="relative grid h-10 w-10 place-items-center rounded-full border border-white/[0.06]
+                     bg-white/[0.03] text-zinc-400 transition-colors hover:border-white/[0.14] hover:text-white hover:bg-white/[0.06]"
         >
           <Bell className="h-4 w-4" />
           <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-flare-400 animate-pulse-vital" />
@@ -83,9 +85,8 @@ export function DashboardTopbar() {
             type="submit"
             aria-label="Sign out"
             title="Sign out"
-            className="grid h-9 w-9 place-items-center rounded-lg
-                       bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12]
-                       text-zinc-400 hover:text-white transition-colors"
+            className="grid h-10 w-10 place-items-center rounded-full border border-white/[0.06]
+                       bg-white/[0.03] text-zinc-400 transition-colors hover:border-white/[0.14] hover:text-white hover:bg-white/[0.06]"
           >
             <LogOut className="h-4 w-4" />
           </button>

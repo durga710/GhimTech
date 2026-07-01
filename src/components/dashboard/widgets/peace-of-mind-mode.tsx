@@ -27,7 +27,7 @@ export function PeaceOfMindMode() {
   return (
     <section
       className={cn(
-        "glass-panel p-6 relative overflow-hidden transition-colors duration-700",
+        "surface-premium relative overflow-hidden p-6 transition-colors duration-700",
         enabled && "ring-1 ring-vital-400/30 bg-vital-400/[0.02]"
       )}
     >
@@ -47,19 +47,19 @@ export function PeaceOfMindMode() {
 
       <div className="relative">
         <div className="flex items-center justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
             <motion.div
               animate={{
                 rotate: enabled ? 360 : 0,
               }}
               transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
               className={cn(
-                "h-10 w-10 rounded-xl grid place-items-center border transition-colors duration-500",
-                enabled
-                  ? "bg-vital-400/15 border-vital-400/40 text-vital-300"
-                  : "bg-white/[0.03] border-white/[0.06] text-zinc-400"
-              )}
-            >
+              "grid h-10 w-10 place-items-center rounded-xl border transition-colors duration-500",
+              enabled
+                ? "bg-vital-400/15 border-vital-400/40 text-vital-300"
+                : "bg-white/[0.03] border-white/[0.06] text-zinc-400"
+            )}
+          >
               <Shield className="h-4 w-4" />
             </motion.div>
 
@@ -80,7 +80,7 @@ export function PeaceOfMindMode() {
             role="switch"
             aria-checked={enabled}
             className={cn(
-              "relative h-7 w-12 rounded-full transition-colors duration-300 shrink-0",
+              "relative h-7 w-12 shrink-0 rounded-full transition-colors duration-300",
               enabled
                 ? "bg-vital-400 shadow-[0_0_24px_-4px_rgba(31,226,148,0.6)]"
                 : "bg-white/10 hover:bg-white/15"

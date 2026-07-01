@@ -52,8 +52,9 @@ const STATUS_STYLES = {
  */
 export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
   return (
-    <section className="glass-panel p-6 relative">
-      <header className="flex items-center justify-between mb-5">
+    <section className="surface-premium relative p-6">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-signal-400/50 to-transparent" />
+      <header className="mb-5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FolderKanban className="h-4 w-4 text-signal-300" />
           <h2 className="label-tactical">Active projects · {projects.length}</h2>
@@ -82,8 +83,7 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
             >
               <Link
                 href={`/dashboard/projects/${p.slug}`}
-                className="group block p-4 rounded-lg border border-white/[0.04]
-                           hover:border-white/[0.12] hover:bg-white/[0.02] transition-colors"
+                className="group block rounded-2xl border border-white/[0.05] bg-white/[0.025] p-4 transition-all hover:-translate-y-0.5 hover:border-white/[0.12] hover:bg-white/[0.05]"
               >
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div className="min-w-0 flex-1">

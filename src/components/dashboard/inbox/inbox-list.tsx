@@ -59,7 +59,7 @@ export function InboxList({ initialMessages }: InboxListProps) {
 
   if (messages.length === 0) {
     return (
-      <div className="glass-panel p-12 text-center">
+      <div className="surface-subtle p-10 text-center">
         <InboxIcon className="h-8 w-8 text-zinc-600 mx-auto mb-3" />
         <p className="text-sm text-zinc-400">No messages yet.</p>
         <p className="text-xs text-zinc-600 mt-1">
@@ -83,7 +83,7 @@ export function InboxList({ initialMessages }: InboxListProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: Math.min(i * 0.03, 0.3), duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
-              "glass-panel relative overflow-hidden transition-colors",
+              "surface-subtle relative overflow-hidden transition-colors",
               !m.read && "ring-1 ring-inset ring-signal-400/25"
             )}
           >
@@ -94,9 +94,9 @@ export function InboxList({ initialMessages }: InboxListProps) {
             <button
               type="button"
               onClick={() => toggleOpen(m)}
-              className="w-full text-left p-4 flex items-start gap-3"
+              className="flex w-full items-start gap-3 p-4 text-left"
             >
-              <div className="shrink-0 h-9 w-9 rounded-lg grid place-items-center bg-white/[0.04] border border-white/10">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/[0.04]">
                 <Mail className={cn("h-4 w-4", m.read ? "text-zinc-500" : "text-signal-300")} />
               </div>
 
@@ -127,7 +127,7 @@ export function InboxList({ initialMessages }: InboxListProps) {
                   transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
                   className="px-4 pb-4"
                 >
-                  <div className="ml-12 rounded-lg bg-black/20 border border-white/[0.06] p-4">
+                  <div className="ml-12 rounded-2xl border border-white/[0.06] bg-black/20 p-4">
                     <p className="text-sm text-zinc-200 whitespace-pre-wrap leading-relaxed">
                       {m.message}
                     </p>

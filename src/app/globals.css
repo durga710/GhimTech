@@ -175,6 +175,12 @@
            shadow-glow-vital hover:-translate-y-px active:translate-y-0;
   }
 
+  .operating-console {
+    background-image:
+      linear-gradient(180deg, rgba(255,255,255,0.035), transparent 48%),
+      radial-gradient(circle at top right, rgba(86,168,255,0.055), transparent 46%);
+  }
+
   /* Corner tick marks — military HUD bracket */
   .hud-corners::before,
   .hud-corners::after,

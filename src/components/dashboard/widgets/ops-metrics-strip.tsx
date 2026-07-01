@@ -58,8 +58,16 @@ export function OpsMetricsStrip({ metrics }: OpsMetricsStripProps) {
             variants={fadeUp}
             whileHover={{ y: -2 }}
             transition={{ type: "spring", stiffness: 300, damping: 24 }}
-            className="glass-panel p-5 relative overflow-hidden"
+            className="surface-subtle relative overflow-hidden p-4"
           >
+            <div
+              aria-hidden
+              className={cn(
+                "absolute inset-x-0 top-0 h-px bg-gradient-to-r to-transparent",
+                hairlineColor
+              )}
+            />
+
             <div className="flex items-start justify-between">
               <span className="label-tactical">{m.label}</span>
               <span className="font-mono text-xs text-zinc-600">
@@ -67,7 +75,7 @@ export function OpsMetricsStrip({ metrics }: OpsMetricsStripProps) {
               </span>
             </div>
 
-            <div className="mt-4 font-display text-3xl text-white tabular-nums tracking-tight">
+            <div className="mt-4 font-display text-[clamp(1.9rem,3vw,3.1rem)] text-white tabular-nums tracking-tight">
               {m.value}
             </div>
 
@@ -86,12 +94,7 @@ export function OpsMetricsStrip({ metrics }: OpsMetricsStripProps) {
             </div>
 
             {/* Bottom hairline */}
-            <div
-              className={cn(
-                "absolute bottom-0 inset-x-0 h-px bg-gradient-to-r to-transparent",
-                hairlineColor
-              )}
-            />
+            <div className={cn("absolute bottom-0 inset-x-0 h-px bg-gradient-to-r to-transparent", hairlineColor)} />
           </motion.div>
         );
       })}

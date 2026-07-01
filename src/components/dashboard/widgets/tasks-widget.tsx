@@ -47,8 +47,9 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
   });
 
   return (
-    <section className="glass-panel p-6 relative">
-      <header className="flex items-center justify-between mb-5">
+    <section className="surface-premium relative p-6">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-vital-400/50 to-transparent" />
+      <header className="mb-5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CheckSquare className="h-4 w-4 text-vital-300" />
           <h2 className="label-tactical">Your queue · {tasks.length}</h2>
@@ -80,7 +81,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
                 ease: [0.22, 1, 0.36, 1],
               }}
               className="group flex items-center gap-3 p-3 rounded-lg
-                         border border-transparent hover:border-white/[0.06] hover:bg-white/[0.02]
+                         border border-transparent hover:border-white/[0.06] hover:bg-white/[0.03]
                          transition-colors cursor-pointer"
             >
               {/* Status checkbox */}

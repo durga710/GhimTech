@@ -54,8 +54,9 @@ export function NotificationsFeed({ notifications }: NotificationsFeedProps) {
   const unreadCount = notifications.filter((n) => n.unread).length;
 
   return (
-    <section className="glass-panel p-6 relative">
-      <header className="flex items-center justify-between mb-5">
+    <section className="surface-premium relative p-6">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-signal-400/60 to-transparent" />
+      <header className="mb-5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bell className="h-4 w-4 text-signal-300" />
           <h2 className="label-tactical">Recent alerts</h2>
@@ -77,16 +78,16 @@ export function NotificationsFeed({ notifications }: NotificationsFeedProps) {
               key={n.id}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{
-                delay: i * 0.05,
-                duration: 0.5,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              className={cn(
-                "relative flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer",
+            transition={{
+              delay: i * 0.05,
+              duration: 0.5,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            className={cn(
+                "relative flex items-start gap-3 rounded-2xl border p-3 transition-all cursor-pointer",
                 n.unread
-                  ? "border-white/[0.08] hover:border-white/[0.16] bg-white/[0.015]"
-                  : "border-transparent hover:border-white/[0.06] hover:bg-white/[0.02]"
+                  ? "border-white/[0.08] bg-white/[0.018] hover:border-white/[0.16] hover:bg-white/[0.03]"
+                  : "border-transparent hover:border-white/[0.06] hover:bg-white/[0.03]"
               )}
             >
               {/* Unread accent */}

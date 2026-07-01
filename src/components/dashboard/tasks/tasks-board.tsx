@@ -54,7 +54,7 @@ export function TasksBoard({ initialTasks }: { initialTasks: DashTask[] }) {
   }
 
   if (tasks.length === 0) {
-    return <div className="glass-panel p-12 text-center text-sm text-zinc-400">No tasks yet.</div>;
+    return <div className="surface-subtle p-10 text-center text-sm text-zinc-400">No tasks yet.</div>;
   }
 
   return (
@@ -62,7 +62,7 @@ export function TasksBoard({ initialTasks }: { initialTasks: DashTask[] }) {
       {COLUMNS.map((col) => {
         const items = tasks.filter((t) => t.status === col.key);
         return (
-          <div key={col.key} className="glass-panel p-4">
+          <div key={col.key} className="surface-subtle p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="label-tactical">{col.label}</h2>
               <span className="font-mono text-[10px] text-zinc-500">{items.length}</span>
@@ -72,14 +72,14 @@ export function TasksBoard({ initialTasks }: { initialTasks: DashTask[] }) {
                 const pm = PRIORITY_META[t.priority];
                 const done = t.status === "done";
                 return (
-                  <motion.li
-                    key={t.id}
-                    layout
-                    className={cn(
-                      "rounded-lg border p-3 bg-white/[0.015]",
-                      done ? "border-white/[0.04] opacity-60" : "border-white/[0.08]"
-                    )}
-                  >
+              <motion.li
+                key={t.id}
+                layout
+                className={cn(
+                  "rounded-2xl border p-3 bg-white/[0.025]",
+                  done ? "border-white/[0.04] opacity-60" : "border-white/[0.08]"
+                )}
+              >
                     <div className="flex items-start gap-2">
                       <button
                         type="button"
