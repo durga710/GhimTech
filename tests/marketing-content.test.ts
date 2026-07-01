@@ -61,3 +61,14 @@ describe("root metadata", () => {
     assert.match(COMPANY.positioning, /AI-native software company/i);
   });
 });
+
+describe("footer links", () => {
+  it("does not require public routes that do not exist yet", async () => {
+    const { FOOTER_LINKS } = await import("../src/lib/content");
+    const hrefs: string[] = FOOTER_LINKS.map((link) => link.href);
+    assert.equal(hrefs.every((href) => href.startsWith("/") || href.startsWith("mailto:")), true);
+    assert.equal(hrefs.includes("/technology"), false);
+    assert.equal(hrefs.includes("/blog"), false);
+    assert.equal(hrefs.includes("/careers"), false);
+  });
+});

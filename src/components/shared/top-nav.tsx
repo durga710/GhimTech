@@ -2,83 +2,94 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { Menu, X } from "lucide-react";
+import { useState } from "react";
 import { NAV } from "@/lib/content";
 import { Logo } from "@/components/shared/logo";
 import { cn } from "@/lib/utils";
 
-/**
- * Top nav.
- * Stays glassy at the top of every public page. Highlights the active route
- * with a soft underline that uses Framer's `layoutId` so it animates between
- * items as you navigate.
- */
 export function TopNav() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
 
   return (
     <motion.header
-      initial={{ y: -20, opacity: 0 }}
+      initial={{ y: -16, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[min(1100px,calc(100vw-2rem))]"
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed inset-x-0 top-3 z-50 px-3"
     >
-      <nav className="glass-panel-strong flex items-center justify-between px-2 py-2">
-        {/* Brand lockup — canonical Ghimtech mark + wordmark */}
+      <nav className="mx-auto flex w-full max-w-6xl items-center justify-between rounded-2xl border border-white/[0.08] bg-ink-950/78 px-3 py-2.5 shadow-panel backdrop-blur-2xl">
         <Link
           href="/"
-          aria-label="Ghimtech home"
-          className="group flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-full transition-colors hover:bg-white/[0.04]"
+          aria-label="GhimTech home"
+          className="flex min-h-11 items-center gap-3 rounded-xl px-2 text-white transition-colors hover:bg-white/[0.04]"
+          onClick={() => setOpen(false)}
         >
-          {/* Mark in signal blue, wordmark on the right (hidden on small screens) */}
-          <Logo variant="mark" size={26} className="text-signal-400" />
-          <Logo
-            variant="wordmark"
-            size={18}
-            className="hidden sm:inline-block text-white"
-          />
+          <Logo variant="mark" size={28} className="text-signal-300" />
+          <Logo variant="wordmark" size={18} className="hidden text-white sm:block" />
         </Link>
 
-        {/* Routes */}
-        <ul className="flex items-center gap-1">
-          {NAV.map((item) => {
+        <ul className="hidden items-center gap-1 md:flex">
+          {NAV.slice(0, -1).map((item) => {
             const active = pathname === item.href;
             return (
               <li key={item.href}>
                 <Link
                   href={item.href}
                   className={cn(
-                    "relative px-3.5 py-1.5 rounded-full text-[13px] transition-colors",
-                    active ? "text-white" : "text-zinc-400 hover:text-zinc-100"
+                    "rounded-full px-3.5 py-2 text-sm transition-colors",
+                    active ? "bg-white/[0.07] text-white" : "text-zinc-400 hover:bg-white/[0.04] hover:text-white"
                   )}
                 >
-                  {active && (
-                    <motion.span
-                      layoutId="nav-active"
-                      className="absolute inset-0 rounded-full bg-white/[0.06] ring-1 ring-inset ring-white/10"
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                    />
-                  )}
-                  <span className="relative">{item.label}</span>
+                  {item.label}
                 </Link>
               </li>
             );
           })}
         </ul>
 
-        {/* CTA */}
-        <Link
-          href="/dashboard"
-          className="hidden sm:inline-flex items-center gap-1.5 mr-1 px-3.5 py-1.5 rounded-full
-                     text-[13px] font-medium text-white
-                     bg-gradient-to-b from-signal-400 to-signal-500
-                     shadow-[0_0_24px_-6px_rgba(58,164,255,0.6)]
-                     transition-transform hover:-translate-y-px"
+        <div className="hidden items-center gap-2 md:flex">
+          <Link href="/dashboard" className="btn-ghost px-4 py-2">
+            Dashboard
+          </Link>
+        </div>
+
+        <button
+          type="button"
+          className="grid h-11 w-11 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.04] text-zinc-200 md:hidden"
+          aria-label={open ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
         >
-          <span className="status-dot status-dot-live" />
-          Dashboard
-        </Link>
+          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </nav>
+
+      <AnimatePresence>
+        {open ? (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="mx-auto mt-2 w-full max-w-6xl rounded-2xl border border-white/[0.08] bg-ink-950/95 p-2 shadow-panel backdrop-blur-2xl md:hidden"
+          >
+            {NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex min-h-11 items-center justify-between rounded-xl px-3 text-sm text-zinc-200 transition-colors hover:bg-white/[0.06]"
+                onClick={() => setOpen(false)}
+              >
+                {item.label}
+                <span className="h-1.5 w-1.5 rounded-full bg-signal-300" />
+              </Link>
+            ))}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </motion.header>
   );
 }
