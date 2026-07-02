@@ -47,15 +47,18 @@ export function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 8 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className={`relative w-full ${maxWidthClass} glass-panel-strong p-6`}
+            className={`relative w-full ${maxWidthClass} glass-panel-strong p-7`}
           >
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-semibold text-white">{title}</h2>
+              <div>
+                <div className="label-tactical mb-2">Modal</div>
+                <h2 className="text-base font-semibold text-white">{title}</h2>
+              </div>
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Close"
-                className="text-zinc-500 hover:text-white transition-colors"
+                className="grid h-9 w-9 place-items-center rounded-full border border-white/0 text-zinc-500 transition-colors hover:border-white/[0.08] hover:bg-white/[0.05] hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -69,4 +72,4 @@ export function Modal({
 }
 
 export const fieldInputClass =
-  "w-full px-3 py-2 rounded-lg bg-white/[0.03] border border-white/10 text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-signal-400/50 transition-colors";
+  "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 py-2.5 text-sm text-white placeholder:text-zinc-600 transition-colors focus:border-signal-400/60 focus:outline-none focus:ring-2 focus:ring-signal-400/20";

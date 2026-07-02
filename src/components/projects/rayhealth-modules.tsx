@@ -48,7 +48,7 @@ export function RayHealthModules() {
                 variants={fadeUp}
                 whileHover={{ y: -2 }}
                 transition={{ type: "spring", stiffness: 300, damping: 24 }}
-                className="glass-panel p-5 relative overflow-hidden group"
+                className="glass-panel-strong p-5 relative overflow-hidden group"
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-mono text-xs text-zinc-500 tracking-tactical">

@@ -33,7 +33,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     <div className="space-y-6">
       <Link
         href="/dashboard/projects"
-        className="inline-flex items-center gap-1.5 text-xs font-mono text-zinc-500 hover:text-zinc-300 transition-colors"
+        className="control-chip w-fit transition-colors hover:text-white"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> All projects
       </Link>
@@ -41,11 +41,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <section className="glass-panel-strong p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="h-11 w-11 rounded-xl grid place-items-center bg-signal-400/10 border border-signal-400/20">
+            <div className="grid h-11 w-11 place-items-center rounded-xl border border-signal-400/20 bg-signal-400/10">
               <FolderKanban className="h-5 w-5 text-signal-300" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold text-white leading-tight">{project.name}</h1>
+              <h1 className="font-display text-[clamp(2rem,4vw,3.2rem)] font-semibold leading-[0.95] tracking-tightest text-white">
+                {project.name}
+              </h1>
               {project.tagline && <p className="text-sm text-zinc-400 mt-0.5">{project.tagline}</p>}
             </div>
           </div>
@@ -74,7 +76,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section className="glass-panel p-6">
+        <section className="glass-panel-strong p-6">
           <div className="flex items-center gap-2 mb-4">
             <CheckSquare className="h-4 w-4 text-signal-300" />
             <h2 className="label-tactical">
@@ -105,7 +107,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           )}
         </section>
 
-        <section className="glass-panel p-6">
+        <section className="glass-panel-strong p-6">
           <div className="flex items-center gap-2 mb-4">
             <Flag className="h-4 w-4 text-signal-300" />
             <h2 className="label-tactical">Milestones</h2>
@@ -134,7 +136,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           )}
         </section>
 
-        <section className="glass-panel p-6">
+        <section className="glass-panel-strong p-6">
           <div className="flex items-center gap-2 mb-4">
             <MapIcon className="h-4 w-4 text-signal-300" />
             <h2 className="label-tactical">Roadmap</h2>
@@ -154,7 +156,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           )}
         </section>
 
-        <section className="glass-panel p-6">
+        <section className="glass-panel-strong p-6">
           <div className="flex items-center gap-2 mb-4">
             <Rocket className="h-4 w-4 text-signal-300" />
             <h2 className="label-tactical">Recent deployments</h2>

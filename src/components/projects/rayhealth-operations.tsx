@@ -58,7 +58,7 @@ export function RayHealthOperations() {
    ============================================================ */
 function DeploymentFeed() {
   return (
-    <div className="glass-panel p-6 relative hud-corners">
+    <div className="glass-panel-strong p-6 relative hud-corners">
       <span className="hud-corner-tl" aria-hidden />
       <span className="hud-corner-br" aria-hidden />
 
@@ -129,7 +129,7 @@ function SprintChart() {
   const barWidth = 100 / SPRINT_METRICS.length;
 
   return (
-    <div className="glass-panel p-6 h-full relative hud-corners">
+    <div className="glass-panel-strong p-6 h-full relative hud-corners">
       <span className="hud-corner-tl" aria-hidden />
       <span className="hud-corner-br" aria-hidden />
 

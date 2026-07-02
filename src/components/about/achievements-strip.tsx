@@ -44,7 +44,7 @@ export function AchievementsStrip() {
             <motion.div
               key={a.label}
               variants={fadeUp}
-              className="glass-panel p-6 lg:p-8 relative hud-corners"
+              className="glass-panel-strong p-6 lg:p-8 relative hud-corners"
             >
               <span className="hud-corner-tl" aria-hidden />
               <span className="hud-corner-br" aria-hidden />

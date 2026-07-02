@@ -79,7 +79,7 @@ export function ServiceSummary() {
               variants={fadeUp}
               whileHover={{ y: -3 }}
               transition={{ type: "spring", stiffness: 320, damping: 24 }}
-              className="glass-panel p-7 relative hud-corners h-full"
+              className="glass-panel-strong p-7 relative hud-corners h-full"
             >
               <span className="hud-corner-tl" aria-hidden />
               <span className="hud-corner-br" aria-hidden />

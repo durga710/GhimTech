@@ -1,6 +1,6 @@
-# Ghimtech — Durga's Founder Operating System
+# Ghimtech — Durga's Founder Workspace
 
-> Personal infrastructure platform for **Durga Ghimeray** (USMC Veteran · Founder · Builder).
+> Invite-gated workspace platform for **Durga Ghimeray** (USMC Veteran · Founder · Builder) and team.
 > Public site at **[ghimtech.org](https://ghimtech.org)** · GitHub: **[durga710/GhimTech](https://github.com/durga710/GhimTech)**
 
 ---
@@ -34,12 +34,12 @@ See [DEPLOY.md](./DEPLOY.md) for the full deployment walkthrough including Verce
 
 ## What this is
 
-A **single-operator** founder OS:
+An **invite-gated** founder workspace:
 
 - **Public marketing pages** — landing, about, experience, RayHealthEVV deep-dive, contact
-- **Protected Command Center** — your personal dashboard with projects, tasks, analytics, AI brief, peace-of-mind mode
+- **Protected Command Center** — workspace accounts with projects, tasks, analytics, AI brief, peace-of-mind mode
 
-Everything is yours. No multi-tenancy. No client-facing surface inside the dashboard. Real DB, real auth, real APIs, working end-to-end.
+The owner email can sign up directly. Teammates can create accounts only with an invite code configured by you. Real DB, real auth, real APIs, working end-to-end.
 
 ---
 
@@ -83,9 +83,10 @@ Everything is yours. No multi-tenancy. No client-facing surface inside the dashb
 **Auth flow**
 
 1. Supabase middleware (`src/middleware.ts`) refreshes SSR auth cookies and gates `/dashboard`, `/admin`, and `/api/private`
-2. Inside protected handlers, `requireUser()` validates the Supabase user with `getUser()` and resolves it to a local User row
-3. Every Prisma query filters by `userId` — no cross-user data leakage possible
-4. Every write hits the audit log via `audit({...})`
+2. Signup allows the owner email or a valid `AUTH_TEAM_INVITE_CODES` value
+3. Inside protected handlers, `requireUser()` validates the Supabase user with `getUser()` and resolves it to a local User row
+4. Every Prisma query filters by `userId` — no cross-user data leakage possible
+5. Every write hits the audit log via `audit({...})`
 
 **Rate limiting**
 

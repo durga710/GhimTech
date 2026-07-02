@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isAllowedOperatorEmail } from "@/lib/auth-policy";
+import { shouldRedirectAuthenticatedAuthRoute } from "@/lib/auth-route-policy";
 import {
   responseWithAuthCookies,
   updateSupabaseSession,
@@ -57,14 +57,10 @@ export default async function middleware(request: NextRequest) {
       );
     }
 
-    if (!isAllowedOperatorEmail(user.email)) {
-      return redirectWithSessionCookies(request, response, "/sign-in?error=not-allowed");
-    }
-
     return response;
   }
 
-  if (user && isAllowedOperatorEmail(user.email)) {
+  if (user && shouldRedirectAuthenticatedAuthRoute(search)) {
     return redirectWithSessionCookies(request, response, "/dashboard");
   }
 

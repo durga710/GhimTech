@@ -46,7 +46,7 @@ export function RayHealthCompliance() {
                 variants={fadeUp}
                 whileHover={{ y: -2 }}
                 transition={{ type: "spring", stiffness: 300, damping: 24 }}
-                className="glass-panel p-7 relative overflow-hidden group"
+                className="glass-panel-strong p-7 relative overflow-hidden group"
               >
                 <div className="flex items-start gap-5">
                   {/* Icon chip */}

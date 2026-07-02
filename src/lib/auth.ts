@@ -128,6 +128,30 @@ async function ensureLocalUser(authUser: SupabaseUser): Promise<PrismaUser> {
   });
 }
 
+export async function provisionLocalUserFromAuthUser(
+  authUser: SupabaseUser
+): Promise<PrismaUser> {
+  return ensureLocalUser(authUser);
+}
+
+export async function isAuthorizedDashboardAuthUser(
+  authUser: SupabaseUser
+): Promise<boolean> {
+  const email = normalizeEmail(authUser.email);
+
+  if (isAllowedOperatorEmail(email)) return true;
+  if (!email) return false;
+
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      OR: [{ clerkId: authUser.id }, { email }],
+    },
+    select: { id: true },
+  });
+
+  return Boolean(existingUser);
+}
+
 async function getAuthenticatedSupabaseUser(): Promise<SupabaseUser | null> {
   let supabase;
 
@@ -147,7 +171,7 @@ async function getAuthenticatedSupabaseUser(): Promise<SupabaseUser | null> {
 
   if (error || !user) return null;
 
-  if (!isAllowedOperatorEmail(user.email)) {
+  if (!(await isAuthorizedDashboardAuthUser(user))) {
     await supabase.auth.signOut();
     redirect("/sign-in?error=not-allowed");
   }
@@ -199,7 +223,9 @@ export async function getOptionalUser(): Promise<PrismaUser | null> {
     error,
   } = await supabase.auth.getUser();
 
-  if (error || !authUser || !isAllowedOperatorEmail(authUser.email)) return null;
+  if (error || !authUser || !(await isAuthorizedDashboardAuthUser(authUser))) {
+    return null;
+  }
 
   const email = normalizeEmail(authUser.email);
 

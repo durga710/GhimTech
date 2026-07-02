@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bell } from "lucide-react";
 import { getNotifications } from "@/lib/dashboard/data";
 import { AlertsList } from "@/components/dashboard/notifications/alerts-list";
+import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 
 export const metadata: Metadata = {
   title: "Alerts",
@@ -13,16 +14,13 @@ export default async function AlertsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl grid place-items-center bg-signal-400/10 border border-signal-400/20">
-          <Bell className="h-5 w-5 text-signal-300" />
-        </div>
-        <div>
-          <h1 className="text-xl font-semibold text-white">Alerts</h1>
-          <p className="text-sm text-zinc-500">System notifications & activity</p>
-        </div>
-      </header>
-
+      <DashboardPageHeader
+        eyebrow="Signal desk"
+        icon={Bell}
+        title="Alerts"
+        description="System notifications and activity, surfaced with stronger hierarchy so the important stuff breaks through immediately."
+        tone="signal"
+      />
       <AlertsList initialNotifications={notifications} />
     </div>
   );

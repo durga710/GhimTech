@@ -3,6 +3,7 @@ import { CheckSquare } from "lucide-react";
 import { getTasks, getProjects } from "@/lib/dashboard/data";
 import { TasksBoard } from "@/components/dashboard/tasks/tasks-board";
 import { NewTaskButton } from "@/components/dashboard/tasks/new-task-button";
+import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 
 export const metadata: Metadata = {
   title: "Tasks",
@@ -14,18 +15,14 @@ export default async function TasksPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl grid place-items-center bg-signal-400/10 border border-signal-400/20">
-            <CheckSquare className="h-5 w-5 text-signal-300" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold text-white">Tasks</h1>
-            <p className="text-sm text-zinc-500">Your active queue, by stage</p>
-          </div>
-        </div>
-        <NewTaskButton projects={projects.map((p) => ({ id: p.id, name: p.name }))} />
-      </header>
+      <DashboardPageHeader
+        eyebrow="Work queue"
+        icon={CheckSquare}
+        title="Tasks"
+        description="Your active queue, sorted by stage, now framed as a command surface rather than a utility list."
+        tone="vital"
+        action={<NewTaskButton projects={projects.map((p) => ({ id: p.id, name: p.name }))} />}
+      />
 
       <TasksBoard initialTasks={tasks} />
     </div>

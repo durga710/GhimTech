@@ -30,13 +30,16 @@ End-to-end setup for the founder operating system. Production target: **ghimtech
 2. From **Project Settings -> API**, copy:
    - Project URL -> `NEXT_PUBLIC_SUPABASE_URL`
    - Anon/public key -> `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-3. Set `AUTH_ALLOWED_EMAIL` to the one email allowed to use the dashboard.
+3. Set `AUTH_ALLOWED_EMAIL` to the owner email that can sign up without a code.
+4. Set `AUTH_TEAM_INVITE_CODES` to one or more comma-separated codes you can give teammates.
 
 ### Restricting access
 
-This is a personal command center, not a public service. After your account
-exists, the app still enforces `AUTH_ALLOWED_EMAIL` on sign-up, sign-in,
-middleware, and `requireUser()`.
+This is an invite-gated workspace, not a public service. The owner email can
+sign up without a code. Teammates must enter one configured invite code at
+`/sign-up`; after signup, their local user row is the durable access record.
+Direct Supabase accounts that were not created through the invite flow are
+rejected by `requireUser()`.
 
 ---
 
@@ -99,7 +102,7 @@ Visit `http://localhost:3000`:
 1. Push to GitHub.
 2. Import in Vercel → connect the GitHub repo.
 3. In Vercel project settings → **Environment Variables**, add EVERYTHING from `.env.local` except `SEED_*` vars.
-   - Use **Production** scope for the real `DATABASE_URL`, `DIRECT_URL`, Supabase URL/key, and `AUTH_ALLOWED_EMAIL`.
+   - Use **Production** scope for the real `DATABASE_URL`, `DIRECT_URL`, Supabase URL/key, `AUTH_ALLOWED_EMAIL`, and `AUTH_TEAM_INVITE_CODES`.
    - **Important:** mark `DATABASE_URL` / `DIRECT_URL` and any server-only keys as **Sensitive**.
 4. Deploy. Vercel runs `prisma generate && next build` automatically (see package.json).
 5. Configure custom domain: Vercel → **Domains** → add `ghimtech.org` and `www.ghimtech.org`. Vercel will give you DNS records to add at your registrar.
@@ -108,7 +111,8 @@ Visit `http://localhost:3000`:
 
 ## 8. Security checklist before going live
 
-- [ ] `AUTH_ALLOWED_EMAIL` set to the one approved operator email
+- [ ] `AUTH_ALLOWED_EMAIL` set to the owner email
+- [ ] `AUTH_TEAM_INVITE_CODES` set to the current team signup code(s)
 - [ ] Supabase Auth email provider enabled
 - [ ] Database URLs and server-only env vars marked sensitive in Vercel
 - [ ] Supabase **Row-Level Security**: not currently required because we go through Prisma with explicit `userId` filters; ALL writes/reads use `requireUser()`. But if you ever expose tables directly to a Supabase client (mobile app, etc.), enable RLS first.

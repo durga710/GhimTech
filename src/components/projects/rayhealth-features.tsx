@@ -162,7 +162,7 @@ function VisualCommandGlass({ color }: { color: string }) {
           />
         ))}
       </div>
-      <div className="absolute bottom-6 left-6 right-6 glass-panel p-3">
+      <div className="absolute bottom-6 left-6 right-6 glass-panel-strong p-3">
         <div className="flex items-center justify-between text-[10px] font-mono">
           <span className="label-tactical">Owner surface</span>
           <span style={{ color }}>● unified</span>
@@ -258,7 +258,7 @@ function VisualMissedPunch({ color }: { color: string }) {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.12, duration: 0.6 }}
-              className="glass-panel p-3 flex items-center justify-between"
+              className="glass-panel-strong p-3 flex items-center justify-between"
             >
               <div className="flex items-center gap-3">
                 <span className="font-mono text-xs text-zinc-500">{r.time}</span>
@@ -302,7 +302,7 @@ function VisualAICopilot({ color }: { color: string }) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="glass-panel p-3"
+          className="glass-panel-strong p-3"
         >
           <div className="text-[10px] font-mono text-zinc-500 mb-1">PROMPT</div>
           <div className="text-sm text-zinc-200">
@@ -315,7 +315,7 @@ function VisualAICopilot({ color }: { color: string }) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.4, duration: 0.6 }}
-          className="glass-panel p-3"
+          className="glass-panel-strong p-3"
           style={{ borderColor: `${color}40` }}
         >
           <div className="text-[10px] font-mono mb-1" style={{ color }}>PROPOSED ACTION · DEEP</div>
@@ -369,11 +369,11 @@ function VisualMobile({ color }: { color: string }) {
               <div className="h-1.5 w-3/4 rounded-full bg-white/5" />
             </div>
             <div className="mt-4 px-3 space-y-1.5">
-              <div className="glass-panel p-2 rounded-md">
+              <div className="glass-panel-strong p-2 rounded-md">
                 <div className="h-1 w-1/3 rounded-full bg-vital-400 mb-1" />
                 <div className="h-1 w-2/3 rounded-full bg-white/10" />
               </div>
-              <div className="glass-panel p-2 rounded-md">
+              <div className="glass-panel-strong p-2 rounded-md">
                 <div className="h-1 w-1/4 rounded-full bg-signal-400 mb-1" />
                 <div className="h-1 w-3/4 rounded-full bg-white/10" />
               </div>
@@ -397,11 +397,11 @@ function VisualMobile({ color }: { color: string }) {
               <div className="h-1.5 w-1/2 rounded-full bg-white/5" />
             </div>
             <div className="mt-4 px-3 space-y-1.5">
-              <div className="glass-panel p-2 rounded-md">
+              <div className="glass-panel-strong p-2 rounded-md">
                 <div className="h-1 w-1/2 rounded-full bg-vital-400 mb-1" />
                 <div className="h-1 w-2/3 rounded-full bg-white/10" />
               </div>
-              <div className="glass-panel p-2 rounded-md">
+              <div className="glass-panel-strong p-2 rounded-md">
                 <div className="h-1 w-1/3 rounded-full bg-signal-400 mb-1" />
                 <div className="h-1 w-1/2 rounded-full bg-white/10" />
               </div>
@@ -439,7 +439,7 @@ function VisualLegal({ color }: { color: string }) {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1, duration: 0.5 }}
-              className="glass-panel p-3 flex items-center gap-3"
+              className="glass-panel-strong p-3 flex items-center gap-3"
             >
               <div className="h-7 w-7 rounded grid place-items-center" style={{ background: `${color}22`, border: `1px solid ${color}40` }}>
                 <span className="font-mono text-[10px]" style={{ color }}>PDF</span>

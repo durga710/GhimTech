@@ -5,6 +5,7 @@ import { getProjects } from "@/lib/dashboard/data";
 import { relativeTime } from "@/lib/dashboard/format";
 import { cn } from "@/lib/utils";
 import { NewProjectButton } from "@/components/dashboard/projects/new-project-button";
+import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 
 export const metadata: Metadata = {
   title: "Projects",
@@ -23,21 +24,17 @@ export default async function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl grid place-items-center bg-signal-400/10 border border-signal-400/20">
-            <FolderKanban className="h-5 w-5 text-signal-300" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold text-white">Projects</h1>
-            <p className="text-sm text-zinc-500">{projects.length} active</p>
-          </div>
-        </div>
-        <NewProjectButton />
-      </header>
+      <DashboardPageHeader
+        eyebrow="Project vault"
+        icon={FolderKanban}
+        title="Projects"
+        description={`${projects.length} active project${projects.length === 1 ? "" : "s"} organized as a premium operating view instead of a plain index.`}
+        tone="signal"
+        action={<NewProjectButton />}
+      />
 
       {projects.length === 0 ? (
-        <div className="glass-panel p-12 text-center text-sm text-zinc-400">No projects yet.</div>
+        <div className="glass-panel-strong p-12 text-center text-sm text-zinc-400">No projects yet.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {projects.map((p) => {
@@ -46,7 +43,7 @@ export default async function ProjectsPage() {
               <Link
                 key={p.id}
                 href={`/dashboard/projects/${p.slug}`}
-                className="glass-panel p-5 flex flex-col gap-4 hover:border-white/[0.16] transition-colors"
+                className="glass-panel-strong flex flex-col gap-4 p-5 transition-all hover:-translate-y-0.5 hover:border-white/[0.16]"
               >
                 <div className="flex items-start justify-between gap-2">
                   <h2 className="text-base font-medium text-white leading-tight">{p.name}</h2>

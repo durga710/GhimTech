@@ -95,7 +95,7 @@ export function RayHealthRoadmap() {
                   variants={fadeUp}
                   whileHover={{ y: -3 }}
                   transition={{ type: "spring", stiffness: 300, damping: 24 }}
-                  className="glass-panel p-6 relative"
+                  className="glass-panel-strong p-6 relative"
                 >
                   {/* Label + node */}
                   <div className="flex items-center justify-between mb-4">

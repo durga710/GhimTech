@@ -1,4 +1,5 @@
 import { getDashboardData } from "@/lib/dashboard/data";
+import { Sparkles } from "lucide-react";
 import { WelcomeCard } from "@/components/dashboard/widgets/welcome-card";
 import { OpsMetricsStrip } from "@/components/dashboard/widgets/ops-metrics-strip";
 import { ProjectsWidget } from "@/components/dashboard/widgets/projects-widget";
@@ -7,6 +8,7 @@ import { ShipActivityChart } from "@/components/dashboard/widgets/ship-activity-
 import { NotificationsFeed } from "@/components/dashboard/widgets/notifications-feed";
 import { PeaceOfMindMode } from "@/components/dashboard/widgets/peace-of-mind-mode";
 import { GenerateBriefButton } from "@/components/dashboard/copilot/generate-brief-button";
+import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 
 /**
  * Dashboard overview page.
@@ -25,10 +27,15 @@ export default async function DashboardOverviewPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <span className="label-tactical">Daily brief</span>
-        <GenerateBriefButton />
-      </div>
+      <DashboardPageHeader
+        eyebrow="Daily brief"
+        icon={Sparkles}
+        title="Command Center"
+        description="The day’s operating picture, organized with stronger hierarchy so the important stuff lands first."
+        action={<GenerateBriefButton />}
+        tone="signal"
+        titleLevel={2}
+      />
       <WelcomeCard firstName={user.firstName ?? null} summary={summary} />
       <OpsMetricsStrip metrics={opsMetrics} />
 

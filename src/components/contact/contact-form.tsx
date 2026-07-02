@@ -306,7 +306,7 @@ function SubmitButton({ state }: { state: SubmitState }) {
 /* ============ Side cards ============ */
 function AvailabilityCard() {
   return (
-    <div className="glass-panel p-6 relative hud-corners">
+    <div className="glass-panel-strong p-6 relative hud-corners">
       <span className="hud-corner-tl" aria-hidden />
       <span className="hud-corner-br" aria-hidden />
 
@@ -345,7 +345,7 @@ function AvailabilityCard() {
 
 function MethodsCard() {
   return (
-    <div className="glass-panel p-6">
+    <div className="glass-panel-strong p-6">
       <span className="label-tactical">Other ways to reach me</span>
       <ul className="mt-4 space-y-3">
         {[

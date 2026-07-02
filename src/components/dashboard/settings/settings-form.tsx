@@ -49,7 +49,7 @@ export function SettingsForm({ initial }: { initial: Prefs }) {
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <section className="glass-panel p-6">
+      <section className="glass-panel-strong p-6">
         <h2 className="label-tactical mb-4">Preferences</h2>
         <div className="divide-y divide-white/[0.06]">
           {TOGGLES.map((t) => (
@@ -65,7 +65,7 @@ export function SettingsForm({ initial }: { initial: Prefs }) {
                 aria-label={t.label}
                 onClick={() => update({ [t.key]: !prefs[t.key] } as Partial<Prefs>)}
                 className={cn(
-                  "relative h-7 w-12 rounded-full transition-colors shrink-0",
+                  "relative h-7 w-12 shrink-0 rounded-full transition-colors",
                   prefs[t.key] ? "bg-vital-400" : "bg-white/10 hover:bg-white/15"
                 )}
               >
@@ -81,7 +81,7 @@ export function SettingsForm({ initial }: { initial: Prefs }) {
         </div>
       </section>
 
-      <section className="glass-panel p-6">
+      <section className="glass-panel-strong p-6">
         <h2 className="label-tactical mb-4">Dashboard density</h2>
         <div className="grid grid-cols-3 gap-2">
           {(["compact", "comfortable", "spacious"] as const).map((d) => (
@@ -90,7 +90,7 @@ export function SettingsForm({ initial }: { initial: Prefs }) {
               type="button"
               onClick={() => update({ dashboardDensity: d })}
               className={cn(
-                "px-3 py-2.5 rounded-lg text-xs font-medium border capitalize transition-colors",
+                "rounded-xl border px-3 py-2.5 text-xs font-medium capitalize transition-colors",
                 prefs.dashboardDensity === d
                   ? "bg-signal-400/10 border-signal-400/40 text-signal-200"
                   : "bg-white/[0.03] border-white/10 text-zinc-400 hover:border-white/20"

@@ -36,24 +36,25 @@ export function SectionHeader({
       viewport={{ once: true, margin: "-100px" }}
       variants={staggerContainer}
       className={cn(
-        "max-w-3xl",
+        "max-w-4xl",
         align === "center" && "mx-auto text-center",
         className
       )}
     >
-      <motion.span variants={fadeUp} className="label-tactical block">
+      <motion.span variants={fadeUp} className="control-chip w-fit">
+        <span className="status-dot status-dot-signal" />
         {eyebrow}
       </motion.span>
       <motion.h2
         variants={fadeUp}
-        className="mt-4 font-display text-display text-white"
+        className="mt-5 font-display text-[clamp(2.4rem,5vw,4.8rem)] text-white tracking-tightest leading-[0.95]"
       >
         {title}
       </motion.h2>
       {sub && (
         <motion.p
           variants={fadeUp}
-          className="mt-5 text-lg text-zinc-400 leading-relaxed"
+          className="mt-6 max-w-2xl text-lg text-zinc-400 leading-relaxed"
         >
           {sub}
         </motion.p>

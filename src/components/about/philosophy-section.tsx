@@ -40,7 +40,7 @@ export function PhilosophySection() {
               variants={fadeUp}
               whileHover={{ x: 4 }}
               transition={{ type: "spring", stiffness: 320, damping: 28 }}
-              className="glass-panel p-6 lg:p-8 grid grid-cols-12 gap-6 items-start cursor-default"
+              className="glass-panel-strong p-6 lg:p-8 grid grid-cols-12 gap-6 items-start cursor-default"
             >
               {/* Numeral */}
               <div className="col-span-3 sm:col-span-2 font-mono text-3xl lg:text-4xl text-signal-400/80 tabular-nums">
