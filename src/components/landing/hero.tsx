@@ -1,10 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { HERO, PRODUCTS } from "@/lib/content";
 import { MarketingButton } from "@/components/marketing/marketing-button";
-import { ProductPreview } from "@/components/marketing/product-card";
+import { ScreenshotFrame } from "@/components/marketing/screenshot-frame";
 import { blurIn, fadeUp, staggerContainer } from "@/lib/motion";
 
 export function Hero() {
@@ -28,24 +28,24 @@ export function Hero() {
           </motion.div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="lg:col-span-6">
-          <div className="surface-premium p-4 lg:p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="label-tactical">{HERO.status.label}</span>
-              <span className="text-xs text-zinc-400">{HERO.status.value}</span>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              {PRODUCTS.map((product) => (
-                <div key={product.slug} className="min-w-0">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium text-white">{product.name}</span>
-                    <ArrowRight className="h-4 w-4 text-zinc-500" />
-                  </div>
-                  <ProductPreview product={product} />
-                </div>
-              ))}
-            </div>
+        <motion.div initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="relative lg:col-span-6">
+          <div className="mb-3 flex items-center justify-between px-1">
+            <span className="label-tactical">{HERO.status.label}</span>
+            <span className="text-xs text-zinc-400">{HERO.status.value}</span>
           </div>
+          <ScreenshotFrame
+            src={PRODUCTS[0].screenshot.src}
+            alt={PRODUCTS[0].screenshot.alt}
+            url={PRODUCTS[0].screenshot.url}
+            priority
+          />
+          <ScreenshotFrame
+            src={PRODUCTS[1].screenshot.src}
+            alt={PRODUCTS[1].screenshot.alt}
+            url={PRODUCTS[1].screenshot.url}
+            sizes="(min-width: 1024px) 20vw, 45vw"
+            className="absolute -bottom-8 -left-6 hidden w-[42%] rotate-[-1.5deg] shadow-[0_32px_90px_-20px_rgba(0,0,0,0.85)] sm:block lg:-left-12"
+          />
         </motion.div>
       </div>
     </section>

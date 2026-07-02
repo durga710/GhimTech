@@ -61,6 +61,11 @@ export const PRODUCTS = [
     cta: "Explore RayHealthEVV",
     accent: "vital",
     previewLabel: "Agency command surface",
+    screenshot: {
+      src: "/products/rayhealth-command-center.jpg",
+      alt: "RayHealthEVV admin Command Center showing live visit alerts, compliance readiness, and today's schedule",
+      url: "rayhealthevv.com/admin",
+    },
     features: [
       "EVV verification",
       "Caregiver onboarding",
@@ -79,15 +84,20 @@ export const PRODUCTS = [
   {
     slug: "helix-studio",
     name: "Helix Studio",
-    status: "In design",
+    status: "Live platform",
     tag: "Prompt-to-production developer platform",
     tagline: "From prompt to real software artifacts.",
     description:
-      "An AI app-building platform direction for turning plain-language prompts into real files, GitHub pull requests, and live previews with bring-your-own-model flexibility.",
-    href: "/#contact",
-    cta: "Ask about Helix",
+      "An AI app-building platform that turns plain-language prompts into real files, live previews, and deployable projects — with video generation, an academy, and a community space built in.",
+    href: "https://helixstudio.org",
+    cta: "Open Helix Studio",
     accent: "signal",
     previewLabel: "Build pipeline",
+    screenshot: {
+      src: "/products/helix-editor.jpg",
+      alt: "Helix Studio editor asking what you want to make, with app-building project templates",
+      url: "helixstudio.org/editor",
+    },
     features: [
       "Prompt-to-production workflow",
       "Real files and diffs",
@@ -102,6 +112,59 @@ export const PRODUCTS = [
       { label: "Review", value: "PRs" },
       { label: "Loop", value: "Preview" },
     ],
+  },
+] as const;
+
+/**
+ * Real screenshots captured from the live products (no mockups).
+ * RayHealth shots come from rayhealthevv.com fixture-account sessions;
+ * Helix shots from helixstudio.org.
+ */
+export const RAYHEALTH_GALLERY = [
+  {
+    src: "/products/rayhealth-command-center.jpg",
+    alt: "Admin Command Center with needs-attention alerts, today's visit counts, and compliance readiness tiles",
+    title: "Command Center",
+    body: "One surface that tells an agency owner what needs attention right now — late visits, expiring credentials, open EVV exceptions.",
+    url: "rayhealthevv.com/admin",
+  },
+  {
+    src: "/products/rayhealth-visit-review.jpg",
+    alt: "Visit review queue with verified and flagged visits alongside their federal EVV data points",
+    title: "Visit Review",
+    body: "Every exception surfaces with the six federal EVV elements alongside it. Approve, file, or escalate in one click.",
+    url: "rayhealthevv.com/admin/review",
+  },
+  {
+    src: "/products/rayhealth-compliance-engine.jpg",
+    alt: "Compliance engine overview spanning audit defense, exceptions, Medicaid, payroll, and claims",
+    title: "Compliance Engine",
+    body: "Audit defense, exceptions, Medicaid submission, payroll, and claims — the whole compliance chain in one place.",
+    url: "rayhealthevv.com/admin/compliance-engine",
+  },
+  {
+    src: "/products/rayhealth-caregiver-portal.jpg",
+    alt: "Caregiver portal dashboard with weekly hours, visits, recent activity, and client assignments",
+    title: "Caregiver Portal",
+    body: "Caregivers see their week at a glance — hours, visits, assignments — with one-tap clock-in on mobile.",
+    url: "rayhealthevv.com/portal",
+  },
+] as const;
+
+export const HELIX_GALLERY = [
+  {
+    src: "/products/helix-editor.jpg",
+    alt: "Helix Studio editor start screen asking what you want to make",
+    title: "Editor",
+    body: "Describe the app; Helix writes the code into real files with live preview.",
+    url: "helixstudio.org/editor",
+  },
+  {
+    src: "/products/helix-video.jpg",
+    alt: "HelixVideo generation workspace",
+    title: "HelixVideo",
+    body: "Prompt-to-video generation built into the same workspace.",
+    url: "helixstudio.org/video",
   },
 ] as const;
 

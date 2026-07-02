@@ -32,6 +32,15 @@ See [DEPLOY.md](./DEPLOY.md) for the full deployment walkthrough including Verce
 
 ---
 
+## Products (real screenshots)
+
+Every image below is a real capture from the live products — no mockups.
+
+| | |
+|---|---|
+| ![RayHealthEVV admin Command Center](public/products/rayhealth-command-center.jpg) **RayHealthEVV — Command Center** (rayhealthevv.com/admin) | ![RayHealthEVV visit review](public/products/rayhealth-visit-review.jpg) **RayHealthEVV — Visit Review** |
+| ![RayHealthEVV caregiver portal](public/products/rayhealth-caregiver-portal.jpg) **RayHealthEVV — Caregiver Portal** | ![Helix Studio editor](public/products/helix-editor.jpg) **Helix Studio — Editor** (helixstudio.org) |
+
 ## What this is
 
 An **invite-gated** founder workspace:

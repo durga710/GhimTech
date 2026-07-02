@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { TopNav } from "@/components/shared/top-nav";
 import { SiteFooter } from "@/components/shared/site-footer";
 import { RayHealthHero } from "@/components/projects/rayhealth-hero";
+import { RayHealthGallery } from "@/components/projects/rayhealth-gallery";
 import { RayHealthModules } from "@/components/projects/rayhealth-modules";
 import { RayHealthFeatures } from "@/components/projects/rayhealth-features";
 import { RayHealthRoadmap } from "@/components/projects/rayhealth-roadmap";
@@ -24,8 +25,9 @@ export const metadata: Metadata = {
 /**
  * RayHealthEVV deep-dive page composition.
  *
- *   1. Hero          — product wordmark + thesis + Command Glass mockup
- *   2. Modules       — 12 production modules as HUD inventory
+ *   1. Hero          — product wordmark + thesis + real Command Center screenshot
+ *   2. Gallery       — real screenshots captured from the live product
+ *   3. Modules       — 12 production modules as HUD inventory
  *   3. Features      — 6 marquee features with abstract animated visuals
  *   4. Roadmap       — Now / Next / Horizon / Vision quarterly cards
  *   5. Operations    — Deployment feed + sprint throughput chart
@@ -37,6 +39,7 @@ export default function RayHealthDeepDive() {
     <main className="relative overflow-x-clip">
       <TopNav />
       <RayHealthHero />
+      <RayHealthGallery />
       <RayHealthModules />
       <RayHealthFeatures />
       <RayHealthRoadmap />
