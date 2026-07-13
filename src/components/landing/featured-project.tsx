@@ -15,8 +15,8 @@ export function FeaturedProject() {
         body="RayHealthEVV runs healthcare operations today. Helix Studio is the developer platform direction for turning prompts into real software artifacts."
       />
       <div className="mt-12 grid gap-6">
-        {PRODUCTS.map((product) => (
-          <ProductCard key={product.slug} product={product} featured />
+        {PRODUCTS.map((product, index) => (
+          <ProductCard key={product.slug} product={product} featured priority={index === 0} />
         ))}
       </div>
     </MarketingSection>

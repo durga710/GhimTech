@@ -9,7 +9,15 @@ import { cn } from "@/lib/utils";
 
 type Product = (typeof PRODUCTS)[number];
 
-export function ProductCard({ product, featured = false }: { product: Product; featured?: boolean }) {
+export function ProductCard({
+  product,
+  featured = false,
+  priority = false,
+}: {
+  product: Product;
+  featured?: boolean;
+  priority?: boolean;
+}) {
   const isVital = product.accent === "vital";
 
   return (
@@ -59,17 +67,18 @@ export function ProductCard({ product, featured = false }: { product: Product; f
         </Link>
       </div>
 
-      <ProductPreview product={product} />
+      <ProductPreview product={product} priority={priority} />
     </motion.article>
   );
 }
 
-export function ProductPreview({ product }: { product: Product }) {
+export function ProductPreview({ product, priority = false }: { product: Product; priority?: boolean }) {
   return (
     <ScreenshotFrame
       src={product.screenshot.src}
       alt={product.screenshot.alt}
       url={product.screenshot.url}
+      priority={priority}
       className="self-center"
     />
   );
