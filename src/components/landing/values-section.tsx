@@ -34,20 +34,18 @@ export function ValuesSection() {
             <motion.article
               key={value.title}
               variants={fadeUp}
-              whileHover={{ y: -2 }}
-              transition={{ type: "spring", stiffness: 300, damping: 24 }}
               className="surface-subtle group relative min-h-[200px] p-7"
             >
-              <span className="absolute right-5 top-5 font-mono text-[11px] text-zinc-500">
+              <span className="absolute right-5 top-5 text-xs text-slate-400">
                 0{index + 1}
               </span>
-              <div className="grid h-11 w-11 place-items-center rounded-xl border border-signal-300/20 bg-signal-300/10">
-                <Icon className="h-5 w-5 text-signal-200" />
+              <div className="grid h-11 w-11 place-items-center rounded-lg border border-slate-200 bg-slate-50">
+                <Icon className="h-5 w-5 text-blue-700" />
               </div>
-              <h3 className="mt-6 text-lg font-medium tracking-tight text-white">
+              <h3 className="mt-6 text-lg font-medium tracking-tight text-slate-950">
                 {value.title}
               </h3>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-400">{value.body}</p>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600">{value.body}</p>
             </motion.article>
           );
         })}

@@ -67,8 +67,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#040508",
-  colorScheme: "dark",
+  themeColor: "#f8fafc",
+  colorScheme: "light",
   width: "device-width",
   initialScale: 1,
 };
@@ -77,23 +77,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable} dark`}
+      className={`${fontDisplay.variable} ${fontSans.variable} ${fontMono.variable}`}
       suppressHydrationWarning
     >
       <body className="font-sans">
-        {/* Global atmosphere — deeper than the previous single-noise pass. */}
-        <div
-          aria-hidden
-          className="pointer-events-none fixed inset-0 -z-20 bg-[radial-gradient(circle_at_top_right,rgba(86,168,255,0.12),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(49,227,154,0.08),transparent_30%),radial-gradient(circle_at_center,rgba(255,255,255,0.03),transparent_52%)]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none fixed inset-0 -z-10 bg-carbon-grid bg-grid-md opacity-[0.13] [mask-image:radial-gradient(circle_at_center,black_28%,transparent_84%)]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none fixed inset-0 -z-10 bg-noise opacity-[0.3] mix-blend-overlay"
-        />
         {children}
       </body>
     </html>

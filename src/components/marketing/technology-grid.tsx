@@ -17,11 +17,11 @@ export function TechnologyGrid() {
           const Icon = ICONS[index] ?? ServerCog;
           return (
             <article key={pillar.title} className="surface-subtle p-6">
-              <div className="grid h-10 w-10 place-items-center rounded-xl border border-signal-300/20 bg-signal-300/10 text-signal-200">
+              <div className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-slate-50 text-blue-700">
                 <Icon className="h-4 w-4" />
               </div>
-              <h3 className="mt-5 text-lg font-medium text-white">{pillar.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-400">{pillar.body}</p>
+              <h3 className="mt-5 text-lg font-medium text-slate-950">{pillar.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600">{pillar.body}</p>
             </article>
           );
         })}

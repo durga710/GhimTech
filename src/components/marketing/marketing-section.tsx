@@ -1,9 +1,5 @@
-"use client";
-
 import type { ReactNode } from "react";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { fadeUp, staggerContainer } from "@/lib/motion";
 
 export function MarketingSection({
   id,
@@ -35,27 +31,18 @@ export function MarketingSectionHeader({
   className?: string;
 }) {
   return (
-    <motion.div
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-100px" }}
-      variants={staggerContainer}
-      className={cn("max-w-3xl", align === "center" && "mx-auto text-center", className)}
-    >
-      <motion.div variants={fadeUp} className="section-kicker">
+    <div className={cn("max-w-3xl", align === "center" && "mx-auto text-center", className)}>
+      <div className="section-kicker">
         {eyebrow}
-      </motion.div>
-      <motion.h2
-        variants={fadeUp}
-        className="mt-5 text-balance font-display text-[clamp(2.4rem,5vw,4.6rem)] leading-[0.98] tracking-tightest text-white"
-      >
+      </div>
+      <h2 className="mt-5 text-balance font-display text-[clamp(2.2rem,4.5vw,4rem)] leading-[1.03] tracking-[-0.04em] text-slate-950">
         {title}
-      </motion.h2>
+      </h2>
       {body ? (
-        <motion.p variants={fadeUp} className="mt-5 max-w-2xl text-base leading-relaxed text-zinc-400 lg:text-lg">
+        <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600 lg:text-lg">
           {body}
-        </motion.p>
+        </p>
       ) : null}
-    </motion.div>
+    </div>
   );
 }

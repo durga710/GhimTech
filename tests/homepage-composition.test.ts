@@ -30,7 +30,7 @@ describe("homepage composition", () => {
   });
 
   it("removes the futuristic HUD and glow vocabulary from the global system", () => {
-    assert.doesNotMatch(globals, /glass-panel|label-tactical|hud-corners|shadow-glow|animate-pulse/);
+    assert.doesNotMatch(globals, /radial-gradient|backdrop-blur|shadow-glow|animate-pulse/);
     assert.match(globals, /--surface:/);
     assert.match(globals, /--accent:/);
   });

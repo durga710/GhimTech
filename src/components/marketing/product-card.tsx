@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { ArrowUpRight, CheckCircle2 } from "lucide-react";
 import type { PRODUCTS } from "@/lib/content";
 import { ScreenshotFrame } from "@/components/marketing/screenshot-frame";
-import { cn } from "@/lib/utils";
 
 type Product = (typeof PRODUCTS)[number];
 
@@ -18,33 +17,25 @@ export function ProductCard({
   featured?: boolean;
   priority?: boolean;
 }) {
-  const isVital = product.accent === "vital";
-
   return (
     <motion.article
-      whileHover={{ y: -4 }}
-      transition={{ type: "spring", stiffness: 260, damping: 26 }}
-      className={cn(
-        "surface-premium group grid gap-7 p-6 lg:p-7",
-        featured && "lg:grid-cols-[1.05fr_0.95fr]",
-        isVital ? "hover:border-vital-300/25" : "hover:border-signal-300/25"
-      )}
+      className={`surface-premium group grid gap-10 p-6 lg:p-10 ${featured ? "lg:grid-cols-[0.72fr_1.28fr] lg:items-center" : ""}`}
     >
       <div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className={cn("control-chip", isVital && "text-vital-200")}>{product.status}</span>
-          <span className="label-tactical">{product.tag}</span>
+          <span className="control-chip">{product.status}</span>
+          <span className="text-xs font-medium text-slate-500">{product.tag}</span>
         </div>
-        <h3 className="mt-5 text-balance font-display text-3xl leading-none tracking-tight text-white lg:text-4xl">
+        <h3 className="mt-5 text-balance font-display text-3xl leading-none tracking-tight text-slate-950 lg:text-4xl">
           {product.name}
         </h3>
-        <p className="mt-2 text-base font-medium text-zinc-200">{product.tagline}</p>
-        <p className="mt-5 max-w-xl text-sm leading-relaxed text-zinc-400">{product.description}</p>
+        <p className="mt-2 text-base font-medium text-slate-700">{product.tagline}</p>
+        <p className="mt-5 max-w-xl text-sm leading-relaxed text-slate-600">{product.description}</p>
 
         <ul className="mt-6 grid gap-2 sm:grid-cols-2">
           {product.features.map((feature) => (
-            <li key={feature} className="flex items-start gap-2 text-sm text-zinc-300">
-              <CheckCircle2 className={cn("mt-0.5 h-4 w-4 shrink-0", isVital ? "text-vital-300" : "text-signal-300")} />
+            <li key={feature} className="flex items-start gap-2 text-sm text-slate-600">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
               <span>{feature}</span>
             </li>
           ))}
@@ -52,7 +43,7 @@ export function ProductCard({
 
         <div className="mt-6 flex flex-wrap gap-2">
           {product.stack.map((item) => (
-            <span key={item} className="rounded-full border border-white/[0.08] bg-white/[0.035] px-3 py-1 text-xs text-zinc-300">
+            <span key={item} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600">
               {item}
             </span>
           ))}
@@ -60,7 +51,7 @@ export function ProductCard({
 
         <Link
           href={product.href}
-          className={cn("mt-7 inline-flex items-center gap-2 text-sm font-medium transition-colors", isVital ? "text-vital-300 hover:text-vital-200" : "text-signal-300 hover:text-signal-200")}
+          className="mt-7 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-blue-700 transition-colors hover:text-blue-900"
         >
           {product.cta}
           <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

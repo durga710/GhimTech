@@ -1,11 +1,9 @@
 import { TopNav } from "@/components/shared/top-nav";
 import { SiteFooter } from "@/components/shared/site-footer";
-import { AmbientBackdrop } from "@/components/landing/ambient-backdrop";
 import { Hero } from "@/components/landing/hero";
 import { ValuesSection } from "@/components/landing/values-section";
 import { FeaturedProject } from "@/components/landing/featured-project";
 import { ClosingCta } from "@/components/landing/closing-cta";
-import { SignalStrip } from "@/components/marketing/signal-strip";
 import { TechnologyGrid } from "@/components/marketing/technology-grid";
 import { FounderPanel } from "@/components/marketing/founder-panel";
 import { MarketingSection, MarketingSectionHeader } from "@/components/marketing/marketing-section";
@@ -29,12 +27,7 @@ export default function LandingPage() {
     <main className="relative overflow-x-clip">
       <TopNav />
 
-      <div className="relative">
-        <AmbientBackdrop />
-        <Hero />
-      </div>
-
-      <SignalStrip />
+      <Hero />
       <FeaturedProject />
       <ValuesSection />
       <TechnologyGrid />
