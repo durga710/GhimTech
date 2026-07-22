@@ -36,7 +36,7 @@ export const metadata: Metadata = {
  */
 export default function RayHealthDeepDive() {
   return (
-    <main className="relative overflow-x-clip">
+    <main className="public-shell relative overflow-x-clip">
       <TopNav />
       <RayHealthHero />
       <RayHealthGallery />

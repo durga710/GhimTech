@@ -27,7 +27,7 @@ export const metadata: Metadata = {
  */
 export default function ContactPage() {
   return (
-    <main className="relative overflow-x-clip">
+    <main className="public-shell relative overflow-x-clip">
       <TopNav />
       <ContactIntro />
       <ContactForm />

@@ -30,15 +30,11 @@ export default async function SignUpPage({
   const error = firstParam(params.error);
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center px-6 py-12">
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-carbon-grid bg-grid-md opacity-25" />
-      </div>
-
+    <main className="auth-shell relative flex min-h-screen flex-col items-center justify-center bg-slate-50 px-6 py-12">
       <Link
         href="/"
         aria-label="GhimTech home"
-        className="mb-8 inline-flex items-center text-white transition-colors hover:text-vital-300"
+        className="mb-8 inline-flex min-h-11 items-center text-slate-950 transition-colors hover:text-blue-800"
       >
         <Logo variant="lockup" size={28} />
       </Link>
@@ -47,15 +43,15 @@ export default async function SignUpPage({
         <input type="hidden" name="next" value={nextPath} />
 
         <div className="space-y-2">
-          <p className="section-kicker text-vital-200">Invite-only enrollment</p>
-          <h1 className="font-display text-3xl tracking-tight text-white">Request workspace access</h1>
-          <p className="text-sm text-zinc-400">
+          <p className="section-kicker">Invite-only enrollment</p>
+          <h1 className="font-display text-3xl tracking-tight text-slate-950">Request workspace access</h1>
+          <p className="text-sm text-slate-600">
             Create an approved GhimTech workspace account with the team invite code.
           </p>
         </div>
 
         {error && errorMessages[error] ? (
-          <p className="mt-5 rounded-lg border border-flare-400/25 bg-flare-400/10 px-3 py-2 text-sm text-flare-200">
+          <p role="alert" className="mt-5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
             {errorMessages[error]}
           </p>
         ) : null}
@@ -68,7 +64,7 @@ export default async function SignUpPage({
               maxLength={80}
               name="firstName"
               type="text"
-              className="w-full rounded-lg border border-white/[0.08] bg-ink-950/60 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-vital-400/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vital-300/60"
+              className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-950 placeholder:text-slate-400 focus:border-blue-700"
               placeholder="Rey"
             />
           </label>
@@ -80,7 +76,7 @@ export default async function SignUpPage({
               maxLength={80}
               name="lastName"
               type="text"
-              className="w-full rounded-lg border border-white/[0.08] bg-ink-950/60 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-vital-400/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vital-300/60"
+              className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-950 placeholder:text-slate-400 focus:border-blue-700"
               placeholder="Rey"
             />
           </label>
@@ -95,7 +91,7 @@ export default async function SignUpPage({
               inputMode="email"
               name="email"
               type="email"
-              className="w-full rounded-lg border border-white/[0.08] bg-ink-950/60 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-vital-400/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vital-300/60"
+              className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-950 placeholder:text-slate-400 focus:border-blue-700"
               placeholder="you@example.com"
             />
           </label>
@@ -109,7 +105,7 @@ export default async function SignUpPage({
               maxLength={128}
               name="password"
               type="password"
-              className="w-full rounded-lg border border-white/[0.08] bg-ink-950/60 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-vital-400/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vital-300/60"
+              className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-950 placeholder:text-slate-400 focus:border-blue-700"
               placeholder="8 characters minimum"
             />
           </label>
@@ -121,7 +117,7 @@ export default async function SignUpPage({
               maxLength={128}
               name="inviteCode"
               type="text"
-              className="w-full rounded-lg border border-white/[0.08] bg-ink-950/60 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-vital-400/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-vital-300/60"
+              className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-950 placeholder:text-slate-400 focus:border-blue-700"
               placeholder="Team code"
             />
           </label>
@@ -135,12 +131,12 @@ export default async function SignUpPage({
         </button>
 
         <div className="mt-5 flex items-center justify-between text-xs">
-          <Link href="/" className="font-mono text-zinc-500 transition-colors hover:text-zinc-300">
+          <Link href="/" className="inline-flex min-h-11 items-center text-slate-600 transition-colors hover:text-slate-950">
             Back to site
           </Link>
           <Link
             href={`/sign-in?next=${encodeURIComponent(nextPath)}`}
-            className="font-mono text-vital-300 transition-colors hover:text-vital-200"
+            className="inline-flex min-h-11 items-center font-semibold text-blue-700 transition-colors hover:text-blue-900"
           >
             Sign in
           </Link>

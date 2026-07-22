@@ -30,7 +30,7 @@ export const metadata: Metadata = {
  */
 export default function AboutPage() {
   return (
-    <main className="relative overflow-x-clip">
+    <main className="public-shell relative overflow-x-clip">
       <TopNav />
       <AboutIntro />
       <ChapterSection />

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function ProjectsIndexPage() {
   return (
-    <main className="relative overflow-x-clip">
+    <main className="public-shell relative overflow-x-clip">
       <TopNav />
       <ProjectsIndexHero />
       <ProjectsIndexFeatured />

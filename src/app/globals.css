@@ -90,4 +90,71 @@
       scroll-behavior: auto !important;
     }
   }
+
+  /* Legacy public sections now inherit the same quiet light foundation. */
+  .public-shell > :not(footer)[class*="bg-ink"],
+  .public-shell > :not(footer) [class*="bg-ink"] {
+    background-color: rgb(255 255 255) !important;
+  }
+
+  .public-shell > :not(footer)[class*="text-white"],
+  .public-shell > :not(footer) [class*="text-white"] {
+    color: rgb(15 23 42) !important;
+  }
+
+  .public-shell > :not(footer)[class*="text-zinc-2"],
+  .public-shell > :not(footer) [class*="text-zinc-2"],
+  .public-shell > :not(footer)[class*="text-zinc-3"],
+  .public-shell > :not(footer) [class*="text-zinc-3"] {
+    color: rgb(51 65 85) !important;
+  }
+
+  .public-shell > :not(footer)[class*="text-zinc-4"],
+  .public-shell > :not(footer) [class*="text-zinc-4"],
+  .public-shell > :not(footer)[class*="text-zinc-5"],
+  .public-shell > :not(footer) [class*="text-zinc-5"] {
+    color: rgb(71 85 105) !important;
+  }
+
+  .public-shell > :not(footer)[class*="border-white"],
+  .public-shell > :not(footer) [class*="border-white"] {
+    border-color: rgb(226 232 240) !important;
+  }
+
+  .public-shell > :not(footer)[class*="bg-white/"],
+  .public-shell > :not(footer) [class*="bg-white/"] {
+    background-color: rgb(248 250 252) !important;
+  }
+
+  .public-shell > :not(footer)[class*="radial-"],
+  .public-shell > :not(footer) [class*="radial-"] {
+    background-image: none !important;
+  }
+
+  .public-shell > :not(footer) [class*="shadow-"] {
+    box-shadow: none !important;
+  }
+
+  .public-shell > :not(footer) [class*="text-signal"],
+  .public-shell > :not(footer) [class*="text-vital"],
+  .public-shell > :not(footer) [class*="text-flare"] {
+    color: rgb(29 78 216) !important;
+  }
+
+  .public-shell > :not(footer) [class*="bg-signal"],
+  .public-shell > :not(footer) [class*="bg-vital"],
+  .public-shell > :not(footer) [class*="bg-flare"] {
+    background-color: rgb(29 78 216) !important;
+  }
+
+  .public-shell > :not(footer) [style*="box-shadow"] {
+    box-shadow: none !important;
+  }
+
+  .public-shell [style*="opacity: 0"],
+  .public-shell [style*="opacity:0"] {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
 }

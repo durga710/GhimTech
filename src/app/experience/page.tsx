@@ -29,7 +29,7 @@ export const metadata: Metadata = {
  */
 export default function ExperiencePage() {
   return (
-    <main className="relative overflow-x-clip">
+    <main className="public-shell relative overflow-x-clip">
       <TopNav />
       <ExperienceIntro />
       <ExperienceTimeline />

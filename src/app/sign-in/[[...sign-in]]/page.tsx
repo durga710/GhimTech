@@ -41,15 +41,11 @@ export default async function SignInPage({
   const message = firstParam(params.message);
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center px-6 py-12">
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-carbon-grid bg-grid-md opacity-25" />
-      </div>
-
+    <main className="auth-shell relative flex min-h-screen flex-col items-center justify-center bg-slate-50 px-6 py-12">
       <Link
         href="/"
         aria-label="GhimTech home"
-        className="mb-8 inline-flex items-center text-white transition-colors hover:text-signal-200"
+        className="mb-8 inline-flex min-h-11 items-center text-slate-950 transition-colors hover:text-blue-800"
       >
         <Logo variant="lockup" size={28} />
       </Link>
@@ -60,18 +56,18 @@ export default async function SignInPage({
 
           <div className="space-y-2">
             <p className="section-kicker">Restricted access</p>
-            <h1 className="font-display text-3xl tracking-tight text-white">Secure operator entrance</h1>
-            <p className="text-sm text-zinc-400">Sign in with an approved GhimTech workspace account.</p>
+            <h1 className="font-display text-3xl tracking-tight text-slate-950">Secure operator entrance</h1>
+            <p className="text-sm text-slate-600">Sign in with an approved GhimTech workspace account.</p>
           </div>
 
           {error && errorMessages[error] ? (
-            <p className="mt-5 rounded-lg border border-flare-400/25 bg-flare-400/10 px-3 py-2 text-sm text-flare-200">
+            <p role="alert" className="mt-5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
               {errorMessages[error]}
             </p>
           ) : null}
 
           {message && messageMessages[message] ? (
-            <p className="mt-5 rounded-lg border border-vital-400/25 bg-vital-400/10 px-3 py-2 text-sm text-vital-200">
+            <p role="status" className="mt-5 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
               {messageMessages[message]}
             </p>
           ) : null}
@@ -85,7 +81,7 @@ export default async function SignInPage({
                 inputMode="email"
                 name="email"
                 type="email"
-                className="w-full rounded-lg border border-white/[0.08] bg-ink-950/60 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-signal-400/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal-300/60"
+                className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-950 placeholder:text-slate-400 focus:border-blue-700"
                 placeholder="you@example.com"
               />
             </label>
@@ -99,7 +95,7 @@ export default async function SignInPage({
                 maxLength={128}
                 name="password"
                 type="password"
-                className="w-full rounded-lg border border-white/[0.08] bg-ink-950/60 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-signal-400/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal-300/60"
+                className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-950 placeholder:text-slate-400 focus:border-blue-700"
                 placeholder="8 characters minimum"
               />
             </label>
@@ -110,31 +106,31 @@ export default async function SignInPage({
           </button>
 
           <div className="mt-5 flex items-center justify-between text-xs">
-            <Link href="/" className="font-mono text-zinc-500 transition-colors hover:text-zinc-300">
+            <Link href="/" className="inline-flex min-h-11 items-center text-slate-600 transition-colors hover:text-slate-950">
               Back to site
             </Link>
             <Link
               href={`/sign-up?next=${encodeURIComponent(nextPath)}`}
-              className="font-mono text-signal-300 transition-colors hover:text-signal-200"
+              className="inline-flex min-h-11 items-center font-semibold text-blue-700 transition-colors hover:text-blue-900"
             >
               Create account
             </Link>
           </div>
         </form>
 
-        <aside className="hidden border-l border-white/[0.07] bg-ink-950/40 p-8 lg:flex lg:flex-col lg:justify-center">
+        <aside className="hidden border-l border-slate-200 bg-slate-50 p-8 lg:flex lg:flex-col lg:justify-center">
           <p className="label-tactical">GhimTech workspace</p>
           <ul className="mt-6 space-y-5">
             {TRUST_POINTS.map((point) => (
-              <li key={point.label} className="flex items-center gap-3 text-sm text-zinc-300">
-                <span className="grid h-9 w-9 place-items-center rounded-lg border border-signal-300/20 bg-signal-300/10">
-                  <point.icon className="h-4 w-4 text-signal-200" />
+              <li key={point.label} className="flex items-center gap-3 text-sm text-slate-700">
+                <span className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white">
+                  <point.icon className="h-4 w-4 text-blue-700" />
                 </span>
                 {point.label}
               </li>
             ))}
           </ul>
-          <p className="mt-8 text-xs leading-relaxed text-zinc-500">
+          <p className="mt-8 text-xs leading-relaxed text-slate-500">
             Access is limited to approved accounts. Activity inside the workspace is
             attributable and account-scoped.
           </p>
