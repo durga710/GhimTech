@@ -2,7 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@ghimtech/ui", "@ghimtech/tax-domain"],
-  output: "standalone",
+  // Standalone output is for the self-hosted Docker image; Vercel manages
+  // its own build output.
+  output: process.env.VERCEL ? undefined : "standalone",
   poweredByHeader: false,
   headers: async () => [
     {
