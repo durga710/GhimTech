@@ -1,57 +1,42 @@
 # Dependencies
 node_modules/
-.pnp.*
-.yarn/
+.pnpm-store/
 
-# Build output
+# Builds
 dist/
-build/
 .next/
 out/
-*.tsbuildinfo
-next-env.d.ts
-
-# Caches
+build/
 .turbo/
-.cache/
-.eslintcache
-.swc/
-
-# Test and coverage artifacts
 coverage/
-test-results/
-playwright-report/
-blob-report/
-.playwright/
+*.tsbuildinfo
 
-# Environment and secrets — a tax platform must never carry credentials in git.
-# Only .env.example belongs in the repository.
+# Environment — never commit secrets
 .env
 .env.*
 !.env.example
 
-# Provider credentials, signing material, and transmitter configuration
-*.pem
-*.key
-*.p12
-*.pfx
-secrets/
+# Databases
+*.sqlite
+*.db
 
-# Taxpayer data must never enter version control under any circumstances.
-# These patterns are a backstop, not a policy — the policy is that real returns,
-# source documents, and acknowledgements live in the encrypted store only.
-*.retn
-returns/
-taxpayer-documents/
-acknowledgements/
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
 
-# Editor and OS
-.vscode/*
-!.vscode/extensions.json
-.idea/
+# OS
 .DS_Store
-*.swp
 Thumbs.db
 
-# Local agent workspaces
-.claude/worktrees/
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Uploads / local object storage (development only)
+.storage/
+
+# Prisma generated client
+packages/database/src/generated/

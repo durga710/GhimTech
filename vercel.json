@@ -2,6 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "pnpm install",
-  "buildCommand": "pnpm turbo run build --filter=@ghimtech-tax/web",
+  "buildCommand": "pnpm turbo run build --filter=@ghimtech/web",
   "outputDirectory": "apps/web/.next"
 }

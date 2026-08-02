@@ -1,0 +1,26 @@
+{
+  "name": "@ghimtech/ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GhimTech Tax design system components",
+  "author": "Durga Ghimeray",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "echo transpiled by the consuming Next.js app",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo linted via app",
+    "test": "echo exercised via app tests"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.7",
+    "typescript": "^5.7.3"
+  }
+}

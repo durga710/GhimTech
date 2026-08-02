@@ -1,0 +1,21 @@
+# Gitleaks configuration for GhimTech Tax.
+#
+# Allowlist covers SYNTHETIC values only:
+#   - test files use fixed fixture passwords and the public RFC 6238 TOTP
+#     test vector ("12345678901234567890" in base32)
+#   - the seed script's development password is documented and reset-forced
+# Real secrets are never allowlisted. Anything outside these paths that
+# trips a rule must fail the scan.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Synthetic test fixtures and documented dev-seed credentials"
+paths = [
+  '''.*\.test\.ts$''',
+  '''apps/api/src/test-helpers\.ts$''',
+  '''packages/database/prisma/seed\.ts$''',
+  '''docs/setup\.md$''',
+  '''README\.md$''',
+]

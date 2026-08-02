@@ -1,0 +1,633 @@
+// GhimTech Tax — production database schema.
+//
+// Conventions:
+//   - All monetary amounts are integer cents (BigInt-safe ranges use Int; totals fit comfortably).
+//   - Highly sensitive values (SSNs, bank numbers, TOTP secrets, signature payloads) are stored
+//     ONLY as envelope-encrypted ciphertext (columns suffixed `Encrypted`) plus masked last-4
+//     and, where lookup is needed, an HMAC blind index (suffixed `Index`).
+//   - Audit events are append-only and hash-chained; nothing updates or deletes them.
+//   - Return state transitions are recorded in ReturnStatusEvent, preserving prior state.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Organization & identity ----------
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  users     User[]
+  clients   Client[]
+}
+
+enum Role {
+  ADMIN
+  PREPARER
+  REVIEWER
+  CLIENT
+  AUDITOR
+}
+
+model User {
+  id                  String    @id @default(uuid())
+  organizationId      String
+  organization        Organization @relation(fields: [organizationId], references: [id])
+  email               String    @unique
+  name                String
+  role                Role
+  passwordHash        String
+  passwordResetForced Boolean   @default(false)
+  totpSecretEncrypted String?
+  mfaEnrolled         Boolean   @default(false)
+  recoveryCodeHashes  String[]  @default([])
+  failedLoginCount    Int       @default(0)
+  lockedUntil         DateTime?
+  disabled            Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  sessions          Session[]
+  devices           Device[]
+  clientProfile     Client?   @relation("ClientUser")
+  assignedClients   Client[]  @relation("AssignedPreparer")
+  auditEvents       AuditEvent[]
+  reviews           Review[]
+  signatures        Signature[]
+  notes             Note[]
+  tasks             Task[]     @relation("TaskAssignee")
+  documentsUploaded Document[] @relation("UploadedBy")
+
+  @@index([organizationId, role])
+}
+
+model Session {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash        String   @unique
+  refreshTokenHash String?  @unique
+  deviceId         String?
+  device           Device?  @relation(fields: [deviceId], references: [id])
+  ipAddress        String?
+  userAgent        String?
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  /// Set after TOTP verification; sessions without it hold no privileges.
+  mfaVerifiedAt    DateTime?
+
+  @@index([userId, expiresAt])
+}
+
+model Device {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fingerprint String
+  label      String?
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  trusted    Boolean   @default(false)
+  sessions   Session[]
+
+  @@unique([userId, fingerprint])
+}
+
+// ---------- Clients & taxpayers ----------
+
+enum IdentityVerificationStatus {
+  UNVERIFIED
+  DOCUMENTS_RECEIVED
+  VERIFIED
+}
+
+model Client {
+  id                 String   @id @default(uuid())
+  organizationId     String
+  organization       Organization @relation(fields: [organizationId], references: [id])
+  /// Optional portal login for this client.
+  userId             String?  @unique
+  user               User?    @relation("ClientUser", fields: [userId], references: [id])
+  assignedPreparerId String?
+  assignedPreparer   User?    @relation("AssignedPreparer", fields: [assignedPreparerId], references: [id])
+
+  firstName String
+  middleInitial String?
+  lastName  String
+  suffix    String?
+  email     String
+  phone     String?
+  tags      String[] @default([])
+  identityVerification IdentityVerificationStatus @default(UNVERIFIED)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  identity     IdentityRecord?
+  addresses    Address[]
+  spouse       SpouseRecord?
+  dependents   DependentRecord[]
+  returns      TaxReturn[]
+  documents    Document[]
+  bankAccounts BankAccount[]
+  notes        Note[]
+  tasks        Task[]
+  communications Communication[]
+  consents     ConsentRecord[]
+
+  @@index([organizationId, lastName])
+  @@index([assignedPreparerId])
+}
+
+/// Encrypted identity for a client (the taxpayer).
+model IdentityRecord {
+  id            String  @id @default(uuid())
+  clientId      String  @unique
+  client        Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tinEncrypted  String
+  tinLast4      String
+  tinIndex      String  @unique // HMAC blind index for duplicate detection
+  dateOfBirth   DateTime
+  occupation    String?
+  isBlind       Boolean @default(false)
+}
+
+model SpouseRecord {
+  id            String  @id @default(uuid())
+  clientId      String  @unique
+  client        Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  firstName     String
+  middleInitial String?
+  lastName      String
+  suffix        String?
+  tinEncrypted  String
+  tinLast4      String
+  tinIndex      String
+  dateOfBirth   DateTime
+  occupation    String?
+  isBlind       Boolean @default(false)
+}
+
+model DependentRecord {
+  id           String  @id @default(uuid())
+  clientId     String
+  client       Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  firstName    String
+  lastName     String
+  tinEncrypted String
+  tinLast4     String
+  tinIndex     String
+  dateOfBirth  DateTime
+  relationship String
+  monthsLivedWithTaxpayer Int @default(12)
+  isStudent    Boolean @default(false)
+  isPermanentlyDisabled Boolean @default(false)
+  providedOwnSupport Boolean @default(false)
+  qualifiesAsQualifyingChild Boolean @default(false)
+  eligibleForChildTaxCredit Boolean @default(false)
+  eligibleForOtherDependentCredit Boolean @default(false)
+  eitcQualifyingChild Boolean @default(false)
+  qualifiesForDependentCare Boolean @default(false)
+
+  @@index([clientId])
+}
+
+model Address {
+  id       String  @id @default(uuid())
+  clientId String
+  client   Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  kind     String  @default("HOME") // HOME | MAILING | PRIOR
+  line1    String
+  line2    String?
+  city     String
+  state    String
+  zip      String
+  current  Boolean @default(true)
+
+  @@index([clientId])
+}
+
+model BankAccount {
+  id                     String  @id @default(uuid())
+  clientId               String
+  client                 Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  bankName               String?
+  routingNumberEncrypted String
+  accountNumberEncrypted String
+  accountLast4           String
+  accountType            String // CHECKING | SAVINGS
+  routingValid           Boolean @default(false)
+  createdAt              DateTime @default(now())
+
+  @@index([clientId])
+}
+
+// ---------- Tax years & returns ----------
+
+model TaxYearConfigRecord {
+  id           String @id @default(uuid())
+  taxYear      Int
+  jurisdiction String // FEDERAL | PENNSYLVANIA
+  ruleVersion  String
+  enabled      Boolean @default(true)
+  notes        String?
+
+  @@unique([taxYear, jurisdiction])
+}
+
+enum ReturnStatus {
+  DRAFT
+  INCOMPLETE
+  READY_FOR_PREPARER_REVIEW
+  PREPARER_REVIEWED
+  READY_FOR_REVIEWER
+  REVIEW_CHANGES_REQUESTED
+  APPROVED
+  AWAITING_CLIENT_REVIEW
+  AWAITING_SIGNATURE
+  SIGNED
+  READY_TO_EFILE
+  VALIDATING
+  VALIDATION_FAILED
+  QUEUED_FOR_TRANSMISSION
+  TRANSMITTING
+  TRANSMITTED
+  ACKNOWLEDGMENT_PENDING
+  ACCEPTED
+  REJECTED
+  CORRECTION_REQUIRED
+  RESUBMISSION_READY
+  RESUBMITTED
+  ARCHIVED
+}
+
+model TaxReturn {
+  id           String       @id @default(uuid())
+  clientId     String
+  client       Client       @relation(fields: [clientId], references: [id])
+  taxYear      Int
+  filingStatus String
+  status       ReturnStatus @default(DRAFT)
+  includePennsylvania Boolean @default(true)
+  /// The normalized return model (TaxReturnModel), stored as JSON.
+  /// SSNs/bank numbers appear only as opaque refs + last4 — never raw.
+  model        Json
+  lockedAt     DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  statusEvents  ReturnStatusEvent[]
+  snapshots     CalculationSnapshotRecord[]
+  diagnostics   DiagnosticRecord[]
+  reviews       Review[]
+  signatures    Signature[]
+  submissions   FilingSubmission[]
+  documents     Document[]
+  incomeRecords IncomeRecord[]
+
+  @@unique([clientId, taxYear])
+  @@index([status])
+}
+
+/// Normalized per-document income records (W-2s, 1099s) linked to a return;
+/// the return model JSON embeds the same data for calculation, these rows
+/// power reporting and cross-checks.
+model IncomeRecord {
+  id        String    @id @default(uuid())
+  returnId  String
+  return    TaxReturn @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  kind      String // W2 | INT | DIV | NEC | MISC | R | SSA | UNEMPLOYMENT | SELF_EMPLOYMENT
+  payerName String
+  data      Json
+  documentId String?
+
+  @@index([returnId, kind])
+}
+
+model ReturnStatusEvent {
+  id         String       @id @default(uuid())
+  returnId   String
+  return     TaxReturn    @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  fromStatus ReturnStatus
+  toStatus   ReturnStatus
+  actorId    String // user id or "SYSTEM"
+  actorRole  String
+  note       String?
+  createdAt  DateTime     @default(now())
+
+  @@index([returnId, createdAt])
+}
+
+model CalculationSnapshotRecord {
+  id           String    @id @default(uuid())
+  returnId     String
+  return       TaxReturn @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  snapshotHash String
+  taxYear      Int
+  ruleVersion  String
+  /// Frozen model + federal + PA results + traces.
+  payload      Json
+  createdAt    DateTime  @default(now())
+  createdById  String
+
+  @@unique([returnId, snapshotHash])
+  @@index([returnId, createdAt])
+}
+
+model DiagnosticRecord {
+  id           String    @id @default(uuid())
+  returnId     String
+  return       TaxReturn @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  snapshotHash String
+  code         String
+  severity     String // ERROR | WARNING | INFO
+  message      String
+  path         String?
+  jurisdiction String
+  createdAt    DateTime  @default(now())
+
+  @@index([returnId, severity])
+}
+
+model Review {
+  id         String    @id @default(uuid())
+  returnId   String
+  return     TaxReturn @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  reviewerId String
+  reviewer   User      @relation(fields: [reviewerId], references: [id])
+  decision   String // APPROVED | CHANGES_REQUESTED
+  notes      String?
+  snapshotHash String
+  createdAt  DateTime  @default(now())
+
+  @@index([returnId])
+}
+
+// ---------- Documents ----------
+
+enum DocumentStatus {
+  UPLOADED
+  SCANNING
+  QUARANTINED
+  PENDING_OCR
+  PENDING_VERIFICATION
+  VERIFIED
+  DELETED
+}
+
+model Document {
+  id           String         @id @default(uuid())
+  clientId     String
+  client       Client         @relation(fields: [clientId], references: [id])
+  returnId     String?
+  return       TaxReturn?     @relation(fields: [returnId], references: [id])
+  uploadedById String
+  uploadedBy   User           @relation("UploadedBy", fields: [uploadedById], references: [id])
+  category     String
+  status       DocumentStatus @default(UPLOADED)
+  filename     String
+  mimeType     String
+  sizeBytes    Int
+  /// Private object-storage key; objects are encrypted at rest and never public.
+  storageKey   String         @unique
+  sha256       String
+  version      Int            @default(1)
+  supersedesId String?
+  taxYear      Int?
+  retainUntil  DateTime?
+  deletedAt    DateTime?
+  createdAt    DateTime       @default(now())
+
+  ocrResults    OcrResultRecord[]
+  verifications DocumentVerificationRecord[]
+  accessLogs    DocumentAccessLog[]
+
+  @@index([clientId, category])
+  @@index([returnId])
+  @@index([sha256])
+}
+
+model OcrResultRecord {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  engine     String
+  category   String
+  categoryConfidence Float
+  fields     Json
+  createdAt  DateTime @default(now())
+}
+
+model DocumentVerificationRecord {
+  id          String   @id @default(uuid())
+  documentId  String
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  verifiedById String
+  categoryConfirmed Boolean
+  fields      Json
+  createdAt   DateTime @default(now())
+}
+
+model DocumentAccessLog {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String
+  action     String // VIEW | DOWNLOAD | DELETE
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([documentId, createdAt])
+}
+
+// ---------- Signatures ----------
+
+model Signature {
+  id             String    @id @default(uuid())
+  returnId       String
+  return         TaxReturn @relation(fields: [returnId], references: [id])
+  signerId       String
+  signer         User      @relation(fields: [signerId], references: [id])
+  role           String // TAXPAYER | SPOUSE
+  snapshotHash   String
+  /// Encrypted signature payload (typed/drawn signature + attestation text).
+  payloadEncrypted String
+  ipAddress      String?
+  userAgent      String?
+  deviceId       String?
+  signedAt       DateTime  @default(now())
+  invalidatedAt  DateTime?
+  invalidatedReason String?
+  /// SHA-256 certificate binding signer, snapshot, and timestamp.
+  certificateHash String
+
+  @@index([returnId, invalidatedAt])
+}
+
+// ---------- E-file ----------
+
+model ProviderConfiguration {
+  id        String   @id @default(uuid())
+  name      String   @unique // mock | sandbox | column-tax | april | generic
+  active    Boolean  @default(false)
+  /// Non-secret configuration; secrets live in the environment/secret manager.
+  settings  Json
+  updatedAt DateTime @updatedAt
+}
+
+enum SubmissionState {
+  QUEUED
+  TRANSMITTING
+  TRANSMITTED
+  ACCEPTED
+  REJECTED
+}
+
+model FilingSubmission {
+  id                 String          @id @default(uuid())
+  returnId           String
+  return             TaxReturn       @relation(fields: [returnId], references: [id])
+  jurisdiction       String // FEDERAL | PENNSYLVANIA
+  provider           String
+  providerReturnId   String
+  providerSubmissionId String        @unique
+  snapshotHash       String
+  state              SubmissionState @default(QUEUED)
+  submittedById      String
+  submittedAt        DateTime        @default(now())
+  resolvedAt         DateTime?
+  /// Links a resubmission to the submission it corrects.
+  correctsSubmissionId String?
+  /// Hash of the audit-chain head at submission time (immutability anchor).
+  auditAnchorHash    String?
+
+  acknowledgments FilingAcknowledgment[]
+
+  @@unique([returnId, snapshotHash, jurisdiction])
+  @@index([state])
+}
+
+model FilingAcknowledgment {
+  id               String           @id @default(uuid())
+  submissionId     String
+  submission       FilingSubmission @relation(fields: [submissionId], references: [id])
+  accepted         Boolean
+  agencyTrackingId String?
+  rejections       Json // [{code, message, location}]
+  acknowledgedAt   DateTime
+  receivedAt       DateTime         @default(now())
+
+  @@unique([submissionId])
+}
+
+// ---------- Communications, tasks, notes ----------
+
+model Communication {
+  id        String   @id @default(uuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id])
+  template  String
+  subject   String
+  /// Rendered body — templates must never include full TINs or bank numbers.
+  body      String
+  channel   String   @default("EMAIL")
+  status    String   @default("PENDING") // PENDING | SENT | FAILED
+  sentAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([clientId, createdAt])
+}
+
+model Task {
+  id          String    @id @default(uuid())
+  clientId    String?
+  client      Client?   @relation(fields: [clientId], references: [id])
+  assigneeId  String?
+  assignee    User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  title       String
+  description String?
+  dueAt       DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([assigneeId, completedAt])
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([clientId, createdAt])
+}
+
+model ConsentRecord {
+  id        String   @id @default(uuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  kind      String // E_SIGN_CONSENT | DISCLOSURE_7216 | COMMUNICATION
+  text      String
+  acceptedAt DateTime @default(now())
+  ipAddress String?
+}
+
+model RetentionRecord {
+  id         String   @id @default(uuid())
+  entityType String // document | return | client
+  entityId   String
+  policy     String
+  retainUntil DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, retainUntil])
+}
+
+// ---------- Audit & security ----------
+
+model AuditEvent {
+  id           String   @id @default(uuid())
+  /// Monotonic position in the organization's chain.
+  sequence     BigInt   @default(autoincrement())
+  action       String
+  actorId      String
+  actorRole    String
+  actorUser    User?    @relation(fields: [actorUserId], references: [id])
+  actorUserId  String?
+  entityType   String?
+  entityId     String?
+  details      Json?
+  ipAddress    String?
+  userAgent    String?
+  occurredAt   DateTime
+  hash         String   @unique
+  previousHash String
+  createdAt    DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorId, occurredAt])
+  @@index([action, occurredAt])
+}
+
+model SecurityEvent {
+  id         String   @id @default(uuid())
+  kind       String // LOGIN_FAILURE_BURST | RATE_LIMIT | PERMISSION_DENIED | MALWARE_DETECTED | ...
+  severity   String // LOW | MEDIUM | HIGH | CRITICAL
+  userId     String?
+  ipAddress  String?
+  details    Json?
+  resolvedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([kind, createdAt])
+}
