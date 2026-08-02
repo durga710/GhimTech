@@ -68,6 +68,41 @@ export async function buildServer(options: BuildOptions = {}): Promise<{
   });
 
   const audit = new AuditService(store);
+
+  // First-run bootstrap: create the initial administrator on an empty user
+  // table. Password reset + MFA enrollment are forced at first sign-in.
+  if (config.bootstrapAdmin) {
+    const existing = await store.listUsers();
+    if (existing.length === 0) {
+      const { hashPassword, passwordMeetsPolicy } = await import("@ghimtech/security");
+      const policy = passwordMeetsPolicy(config.bootstrapAdmin.password);
+      if (!policy.ok) {
+        throw new Error(`GHIMTECH_BOOTSTRAP_ADMIN_PASSWORD rejected: ${policy.reason}`);
+      }
+      const { randomUUID } = await import("node:crypto");
+      const admin = await store.createUser({
+        id: randomUUID(),
+        email: config.bootstrapAdmin.email,
+        name: "Administrator",
+        role: "ADMIN",
+        passwordHash: await hashPassword(config.bootstrapAdmin.password),
+        passwordResetForced: true,
+        mfaEnrolled: false,
+        recoveryCodeHashes: [],
+        failedLoginCount: 0,
+        disabled: false,
+      });
+      await audit.log({
+        action: "user.created",
+        actorId: "SYSTEM",
+        actorRole: "SYSTEM",
+        entityType: "user",
+        entityId: admin.id,
+        details: { bootstrap: true, role: "ADMIN" },
+      });
+    }
+  }
+
   registerAuth(app, { store, audit });
 
   const ctx: RouteContext = { store, audit, config };

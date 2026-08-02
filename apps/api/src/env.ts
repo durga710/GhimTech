@@ -16,6 +16,12 @@ export interface ApiConfig {
   efileProvider: string;
   sessionTtlMinutes: number;
   corsOrigin: string;
+  /**
+   * First-run bootstrap: when the user table is empty, create this admin so a
+   * fresh deployment has a way to sign in. Password reset and MFA enrollment
+   * are forced at first login. Remove the variables after bootstrap.
+   */
+  bootstrapAdmin?: { email: string; password: string };
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
@@ -47,7 +53,16 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     throw new Error("Production requires DATABASE_URL (Prisma store)");
   }
 
+  const bootstrapAdmin =
+    env.GHIMTECH_BOOTSTRAP_ADMIN_EMAIL && env.GHIMTECH_BOOTSTRAP_ADMIN_PASSWORD
+      ? {
+          email: env.GHIMTECH_BOOTSTRAP_ADMIN_EMAIL,
+          password: env.GHIMTECH_BOOTSTRAP_ADMIN_PASSWORD,
+        }
+      : undefined;
+
   return {
+    bootstrapAdmin,
     port: Number(env.PORT ?? 4000),
     host: env.HOST ?? "0.0.0.0",
     environment,

@@ -90,6 +90,53 @@ describe("authentication", () => {
   });
 });
 
+describe("bootstrap admin", () => {
+  it("creates the initial admin on an empty store and can sign in", async () => {
+    const { loadConfig } = await import("./env.js");
+    const { buildServer } = await import("./server.js");
+    const { MemoryStore } = await import("./store/memory.js");
+    const config = loadConfig({
+      GHIMTECH_ENV: "test",
+      GHIMTECH_MASTER_KEY: "a".repeat(64),
+      GHIMTECH_INDEX_KEY: "b".repeat(64),
+      GHIMTECH_STORE: "memory",
+      GHIMTECH_BOOTSTRAP_ADMIN_EMAIL: "boot-admin@test.ghimtech.example",
+      GHIMTECH_BOOTSTRAP_ADMIN_PASSWORD: "BootstrapPass123",
+    } as NodeJS.ProcessEnv);
+    const freshStore = new MemoryStore();
+    const built = await buildServer({ config, store: freshStore });
+    const admin = await freshStore.getUserByEmail("boot-admin@test.ghimtech.example");
+    expect(admin?.role).toBe("ADMIN");
+    expect(admin?.passwordResetForced).toBe(true);
+    const res = await built.app.inject({
+      method: "POST",
+      url: "/auth/login",
+      payload: { email: "boot-admin@test.ghimtech.example", password: "BootstrapPass123" },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().mfaRequired).toBe(true);
+
+    // A second boot with users present must not create anything.
+    await buildServer({ config, store: freshStore });
+    expect(await freshStore.listUsers()).toHaveLength(1);
+  });
+
+  it("rejects weak bootstrap passwords", async () => {
+    const { loadConfig } = await import("./env.js");
+    const { buildServer } = await import("./server.js");
+    const { MemoryStore } = await import("./store/memory.js");
+    const config = loadConfig({
+      GHIMTECH_ENV: "test",
+      GHIMTECH_MASTER_KEY: "a".repeat(64),
+      GHIMTECH_INDEX_KEY: "b".repeat(64),
+      GHIMTECH_STORE: "memory",
+      GHIMTECH_BOOTSTRAP_ADMIN_EMAIL: "boot-admin@test.ghimtech.example",
+      GHIMTECH_BOOTSTRAP_ADMIN_PASSWORD: "weak",
+    } as NodeJS.ProcessEnv);
+    await expect(buildServer({ config, store: new MemoryStore() })).rejects.toThrow(/rejected/);
+  });
+});
+
 describe("role permissions", () => {
   it("denies client and preparer access to admin-only user management", async () => {
     const preparer = await createUser(store, "PREPARER");
