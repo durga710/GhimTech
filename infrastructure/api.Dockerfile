@@ -14,9 +14,11 @@ RUN pnpm --filter=@ghimtech/api deploy --prod --legacy /out
 
 FROM node:22-alpine AS runtime
 ENV NODE_ENV=production
-# Patch OS packages and remove package-manager tooling (npm/corepack and their
-# bundled dependencies) — the runtime needs only the node binary.
+# Patch OS packages, add OpenSSL (required by the Prisma engines on Alpine),
+# and remove package-manager tooling (npm/corepack and their bundled
+# dependencies) — the runtime needs only the node binary.
 RUN apk upgrade --no-cache \
+  && apk add --no-cache openssl \
   && rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /opt/yarn* \
   && addgroup -S ghimtech && adduser -S ghimtech -G ghimtech
 WORKDIR /app
