@@ -1,28 +1,33 @@
 {
-  "name": "@ghimtech-tax/tax-engine-federal",
+  "name": "@ghimtech/tax-engine-federal",
   "version": "0.1.0",
   "private": true,
-  "description": "Federal Form 1040 domain model and e-file diagnostics engine.",
+  "description": "Deterministic federal individual income tax engine for GhimTech Tax",
+  "author": "Durga Ghimeray",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "clean": "rm -rf dist .turbo coverage"
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@ghimtech/tax-domain": "workspace:*",
+    "@ghimtech/tax-year-config": "workspace:*"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^2.1.8",
-    "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "@ghimtech/config": "workspace:*",
+    "@ghimtech/testing": "workspace:*",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.4"
   }
 }

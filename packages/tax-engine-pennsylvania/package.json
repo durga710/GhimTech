@@ -1,0 +1,33 @@
+{
+  "name": "@ghimtech/tax-engine-pennsylvania",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Deterministic Pennsylvania personal income tax engine (PA-40) for GhimTech Tax",
+  "author": "Durga Ghimeray",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@ghimtech/tax-domain": "workspace:*",
+    "@ghimtech/tax-year-config": "workspace:*"
+  },
+  "devDependencies": {
+    "@ghimtech/config": "workspace:*",
+    "@ghimtech/testing": "workspace:*",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.4"
+  }
+}

@@ -1,8 +1,6 @@
-/** Tailwind v4 runs entirely as a PostCSS plugin; there is no tailwind.config. */
-const config = {
+export default {
   plugins: {
-    '@tailwindcss/postcss': {},
+    tailwindcss: {},
+    autoprefixer: {},
   },
 };
-
-export default config;

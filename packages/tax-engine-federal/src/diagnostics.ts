@@ -1,204 +1,273 @@
 /**
- * The federal diagnostics engine.
- *
- * This is the only entry point a caller needs: hand it a return, get back an
- * ordered, severity-graded report and a single boolean saying whether the return
- * can be transmitted. Everything here is designed around one requirement — a
- * preparer running diagnostics twice on the same return must see exactly the
- * same report both times, in the same order, so that "I have fixed three of
- * these" is a statement about the return and never about the engine. That is why
- * the as-of date is an explicit input rather than a call to the clock buried
- * inside a rule, and why the sort is total rather than merely by severity.
+ * Federal structural diagnostics. These run before and during calculation and
+ * are the mechanism that blocks unsupported or inconsistent returns from
+ * being filed (ERROR severity blocks e-filing).
  */
 import {
-  SEVERITY_RANK,
-  blocksElectronicFiling,
   type Diagnostic,
-  type DiagnosticContext,
-  type DiagnosticFinding,
-  type DiagnosticReport,
-  type DiagnosticRule,
-  type DiagnosticSeverity,
-  type RunDiagnosticsOptions,
-} from './diagnostics/types.js';
-import { FEDERAL_DIAGNOSTIC_RULES } from './diagnostics/registry.js';
-import type { FederalReturn, IsoDate } from './types.js';
+  DiagnosticCodes,
+  type TaxReturnModel,
+  multiplyRate,
+} from "@ghimtech/tax-domain";
+import type { FederalYearConfig } from "@ghimtech/tax-year-config";
 
-/** Reported when a rule throws instead of returning findings. */
-const ENGINE_FAILURE_CODE = 'GT-ENGINE-001';
-
-/** Every severity, in report order, so counts always carry all four keys. */
-const ALL_SEVERITIES: readonly DiagnosticSeverity[] = [
-  'reject',
-  'error',
-  'warning',
-  'informational',
-];
-
-/**
- * Today's calendar date in `YYYY-MM-DD` form.
- *
- * Tests always pass `asOfDate` explicitly; nothing in the suite is allowed to
- * depend on the day it runs. This default exists only for the application,
- * where "is this signature dated in the future" genuinely means "later than
- * now".
- */
-function today(): IsoDate {
-  return new Date().toISOString().slice(0, 10);
+function err(code: string, message: string, path?: string): Diagnostic {
+  return { code, severity: "ERROR", message, path, jurisdiction: "FEDERAL" };
+}
+function warn(code: string, message: string, path?: string): Diagnostic {
+  return { code, severity: "WARNING", message, path, jurisdiction: "FEDERAL" };
+}
+function info(code: string, message: string, path?: string): Diagnostic {
+  return { code, severity: "INFO", message, path, jurisdiction: "FEDERAL" };
 }
 
-/**
- * Promote a bare finding to a full diagnostic by stamping the rule's identity
- * onto it. Optional keys are omitted rather than set to `undefined`, because
- * `exactOptionalPropertyTypes` makes those two things different and a JSON
- * round trip of the report should not sprout null fields.
- */
-function toDiagnostic(rule: DiagnosticRule, finding: DiagnosticFinding): Diagnostic {
-  const diagnostic: Diagnostic = {
-    code: rule.code,
-    severity: finding.severity ?? rule.severity,
-    message: finding.message,
-  };
-  if (rule.form !== undefined) diagnostic.form = rule.form;
-  if (finding.field !== undefined) diagnostic.field = finding.field;
-  if (rule.irsBusinessRule !== undefined) diagnostic.irsBusinessRule = rule.irsBusinessRule;
-  if (rule.reference !== undefined) diagnostic.reference = rule.reference;
-  if (finding.resolution !== undefined) diagnostic.resolution = finding.resolution;
-  return diagnostic;
+export function ageAtYearEnd(dateOfBirth: string, taxYear: number): number {
+  const dob = new Date(`${dateOfBirth}T00:00:00Z`);
+  const yearEnd = Date.UTC(taxYear, 11, 31);
+  let age = taxYear - dob.getUTCFullYear();
+  const birthdayThisYear = Date.UTC(taxYear, dob.getUTCMonth(), dob.getUTCDate());
+  if (birthdayThisYear > yearEnd) age -= 1;
+  return age;
 }
 
-/**
- * A total order over diagnostics: severity, then code, then field, then message.
- *
- * A diagnostic with no field sorts after those that name one, so the return-wide
- * observations sit below the specific findings a preparer can click straight
- * into.
- */
-function compareDiagnostics(a: Diagnostic, b: Diagnostic): number {
-  const bySeverity = SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity];
-  if (bySeverity !== 0) return bySeverity;
+export function structuralDiagnostics(
+  model: TaxReturnModel,
+  config: FederalYearConfig,
+): Diagnostic[] {
+  const diags: Diagnostic[] = [];
+  const isJoint = model.filingStatus === "MARRIED_FILING_JOINTLY";
 
-  const byCode = a.code.localeCompare(b.code);
-  if (byCode !== 0) return byCode;
-
-  if (a.field !== b.field) {
-    if (a.field === undefined) return 1;
-    if (b.field === undefined) return -1;
-    const byField = a.field.localeCompare(b.field);
-    if (byField !== 0) return byField;
+  // Identity
+  if (!model.taxpayer.ssnRef) {
+    diags.push(
+      err(
+        DiagnosticCodes.MISSING_TIN,
+        "Taxpayer identification number is missing",
+        "/taxpayer/ssnRef",
+      ),
+    );
+  }
+  if (isJoint && !model.spouse) {
+    diags.push(
+      err(
+        DiagnosticCodes.MISSING_SPOUSE,
+        "Married filing jointly requires spouse information",
+        "/spouse",
+      ),
+    );
+  }
+  if (!isJoint && model.filingStatus !== "MARRIED_FILING_SEPARATELY" && model.spouse) {
+    diags.push(
+      err(
+        DiagnosticCodes.FILING_STATUS_INCONSISTENT,
+        `Filing status ${model.filingStatus} does not allow spouse information`,
+        "/spouse",
+      ),
+    );
+  }
+  if (model.spouse && !model.spouse.ssnRef) {
+    diags.push(
+      err(DiagnosticCodes.MISSING_TIN, "Spouse identification number is missing", "/spouse/ssnRef"),
+    );
   }
 
-  return a.message.localeCompare(b.message);
-}
+  // Head of household requires a qualifying person.
+  if (model.filingStatus === "HEAD_OF_HOUSEHOLD" && model.dependents.length === 0) {
+    diags.push(
+      err(
+        DiagnosticCodes.HOH_NO_QUALIFYING_PERSON,
+        "Head of household requires a qualifying person; no dependents are listed",
+        "/dependents",
+      ),
+    );
+  }
 
-/** The message of a thrown value, whatever kind of value it turned out to be. */
-function describeThrown(thrown: unknown): string {
-  if (thrown instanceof Error) return thrown.message;
-  return String(thrown);
-}
+  // Dependent consistency
+  model.dependents.forEach((dep, i) => {
+    if (!dep.ssnRef) {
+      diags.push(
+        err(
+          DiagnosticCodes.MISSING_TIN,
+          `Dependent ${i + 1} is missing an SSN/ITIN`,
+          `/dependents/${i}/ssnRef`,
+        ),
+      );
+    }
+    const age = ageAtYearEnd(dep.dateOfBirth, model.taxYear);
+    if (dep.eligibleForChildTaxCredit && age >= 17) {
+      diags.push(
+        err(
+          DiagnosticCodes.DEPENDENT_CONFLICT,
+          `Dependent ${i + 1} is marked CTC-eligible but was ${age} at year end (must be under 17)`,
+          `/dependents/${i}/eligibleForChildTaxCredit`,
+        ),
+      );
+    }
+    if (dep.eligibleForChildTaxCredit && dep.eligibleForOtherDependentCredit) {
+      diags.push(
+        err(
+          DiagnosticCodes.DEPENDENT_CONFLICT,
+          `Dependent ${i + 1} cannot be eligible for both the CTC and the ODC`,
+          `/dependents/${i}`,
+        ),
+      );
+    }
+    if (dep.qualifiesAsQualifyingChild && dep.providedOwnSupport) {
+      diags.push(
+        err(
+          DiagnosticCodes.DEPENDENT_CONFLICT,
+          `Dependent ${i + 1} cannot be a qualifying child while providing more than half of their own support`,
+          `/dependents/${i}`,
+        ),
+      );
+    }
+  });
 
-/**
- * Run the diagnostics rule set against a return.
- *
- * The return is never mutated: the report is a pure function of the return, the
- * computed totals and the as-of date.
- */
-export function runDiagnostics(
-  federalReturn: FederalReturn,
-  options: RunDiagnosticsOptions = {},
-): DiagnosticReport {
-  const rules = options.rules ?? FEDERAL_DIAGNOSTIC_RULES;
-  const asOfDate = options.asOfDate ?? today();
-  const suppress = new Set(options.suppress ?? []);
+  // W-2 sanity: withholding above 50% of wages is almost always a data-entry error.
+  model.w2s.forEach((w2, i) => {
+    if (w2.wages > 0 && w2.federalWithholding > multiplyRate(w2.wages, 0.5)) {
+      diags.push(
+        warn(
+          DiagnosticCodes.W2_WITHHOLDING_SUSPICIOUS,
+          `W-2 ${i + 1} (${w2.employerName}): federal withholding exceeds 50% of wages — verify boxes 1 and 2`,
+          `/w2s/${i}`,
+        ),
+      );
+    }
+  });
 
-  const context: DiagnosticContext = {
-    return: federalReturn,
-    asOfDate,
-    ...(options.computed !== undefined ? { computed: options.computed } : {}),
-  };
+  // 1099-R with undetermined taxable amount must be resolved by the preparer.
+  model.retirement.forEach((r, i) => {
+    if (r.taxableAmountNotDetermined) {
+      diags.push(
+        err(
+          DiagnosticCodes.RETIREMENT_TAXABLE_UNRESOLVED,
+          `1099-R ${i + 1} (${r.payerName}): taxable amount not determined — preparer must resolve box 2a before filing`,
+          `/retirement/${i}`,
+        ),
+      );
+    }
+  });
 
-  const diagnostics: Diagnostic[] = [];
-  let rulesEvaluated = 0;
+  // Unsupported self-employment complexity.
+  model.selfEmployment.forEach((se, i) => {
+    if (se.requiresComplexSchedule) {
+      diags.push(
+        err(
+          DiagnosticCodes.UNSUPPORTED_COMPLEX_SCHEDULE_C,
+          `Business "${se.businessName}" requires inventory, depreciation, employees, or accrual accounting — not supported in this release`,
+          `/selfEmployment/${i}`,
+        ),
+      );
+    }
+    if (se.totalExpenses > se.grossReceipts) {
+      diags.push(
+        err(
+          DiagnosticCodes.UNSUPPORTED_SITUATION,
+          `Business "${se.businessName}" reports a net loss — Schedule C losses are not supported in this release`,
+          `/selfEmployment/${i}`,
+        ),
+      );
+    }
+  });
 
-  for (const rule of rules) {
-    if (suppress.has(rule.code)) continue;
-    rulesEvaluated += 1;
-
-    try {
-      for (const finding of rule.evaluate(context)) {
-        diagnostics.push(toDiagnostic(rule, finding));
-      }
-    } catch (thrown) {
-      // One defective rule must not cost the preparer the whole report. A
-      // partial report with an honest note naming the rule that failed is far
-      // more useful than an exception that leaves them with nothing at all and
-      // no idea which of a hundred rules to blame.
-      diagnostics.push({
-        code: ENGINE_FAILURE_CODE,
-        severity: 'error',
-        message: `Diagnostic rule ${rule.code} failed to run: ${describeThrown(thrown)}`,
-        resolution:
-          'The remaining rules ran normally, so the rest of this report is complete. Report the failing rule code, and treat this return as unreviewed for that rule.',
-      });
+  // Itemized components we cannot yet support.
+  if (model.itemized) {
+    if (model.itemized.mortgageOverLimit) {
+      diags.push(
+        err(
+          DiagnosticCodes.UNSUPPORTED_ITEMIZED_COMPONENT,
+          "Mortgage principal above the interest-deduction limit requires the Form 936 worksheet — not supported in this release",
+          "/itemized/mortgageOverLimit",
+        ),
+      );
+    }
+    if (model.itemized.charitableNonCash > 500 * 100) {
+      diags.push(
+        err(
+          DiagnosticCodes.UNSUPPORTED_ITEMIZED_COMPONENT,
+          "Non-cash charitable contributions over $500 require Form 8283 — not supported in this release",
+          "/itemized/charitableNonCash",
+        ),
+      );
     }
   }
 
-  const minimum = options.minimumSeverity;
-  const retained =
-    minimum === undefined
-      ? diagnostics
-      : diagnostics.filter(
-          (diagnostic) => SEVERITY_RANK[diagnostic.severity] <= SEVERITY_RANK[minimum],
-        );
-
-  retained.sort(compareDiagnostics);
-
-  const counts: Record<DiagnosticSeverity, number> = {
-    reject: 0,
-    error: 0,
-    warning: 0,
-    informational: 0,
-  };
-  let blockingCount = 0;
-  for (const diagnostic of retained) {
-    counts[diagnostic.severity] += 1;
-    if (blocksElectronicFiling(diagnostic.severity)) blockingCount += 1;
+  // Marketplace insurance requires premium tax credit reconciliation (Form 8962), unsupported.
+  if (model.preparerFlags.includes("HAS_1095_A")) {
+    diags.push(
+      err(
+        DiagnosticCodes.MISSING_1095A_RECONCILIATION,
+        "Marketplace insurance (Form 1095-A) requires premium tax credit reconciliation — not supported in this release",
+        "/preparerFlags",
+      ),
+    );
   }
 
-  // Only codes that actually name a rule in the set being run are echoed back.
-  // A typo in a suppression list would otherwise look like it had taken effect.
-  const known = new Set(rules.map((rule) => rule.code));
-  const suppressedCodes = [...suppress].filter((code) => known.has(code)).sort();
+  // Banking
+  if (
+    model.payments.refundMethod === "DIRECT_DEPOSIT" ||
+    model.payments.balanceDueMethod === "DIRECT_DEBIT"
+  ) {
+    if (!model.payments.bankAccount) {
+      diags.push(
+        err(
+          DiagnosticCodes.DIRECT_DEPOSIT_MISSING_BANK,
+          "Direct deposit/debit selected but no bank account is on file",
+          "/payments/bankAccount",
+        ),
+      );
+    } else if (!model.payments.bankAccount.routingNumberValid) {
+      diags.push(
+        err(
+          DiagnosticCodes.BANK_ROUTING_INVALID,
+          "Bank routing number failed validation",
+          "/payments/bankAccount",
+        ),
+      );
+    }
+  }
 
-  return {
-    taxYear: federalReturn.taxYear,
-    diagnostics: retained,
-    counts,
-    blockingCount,
-    eFileEligible: blockingCount === 0,
-    rulesEvaluated,
-    suppressedCodes,
-  };
-}
+  // MFS Social Security is unsupported (living-apart rules need extra data).
+  if (
+    model.filingStatus === "MARRIED_FILING_SEPARATELY" &&
+    model.socialSecurity.some((s) => s.netBenefits > 0)
+  ) {
+    diags.push(
+      err(
+        DiagnosticCodes.UNSUPPORTED_SITUATION,
+        "Social Security benefits with married-filing-separately status are not supported in this release",
+        "/socialSecurity",
+      ),
+    );
+  }
 
-/** Pluralise a count of findings for the one-line summary. */
-function phrase(count: number, singular: string): string {
-  return `${count} ${count === 1 ? singular : `${singular}s`}`;
-}
+  // SALT cap phase-down for very high incomes is unsupported for 2025.
+  const wages = model.w2s.reduce((s, w) => s + w.wages, 0);
+  if (model.itemized && wages > 500_000 * 100) {
+    diags.push(
+      err(
+        DiagnosticCodes.UNSUPPORTED_SITUATION,
+        "Itemized SALT deduction with income above $500,000 requires the SALT-cap phase-down computation — not supported in this release",
+        "/itemized",
+      ),
+    );
+  }
 
-/**
- * A one-line human summary of a report, for a status bar or a log line.
- *
- * The eligibility clause always appears, even when there is nothing to report,
- * because "no diagnostics" and "safe to transmit" are different claims and the
- * preparer is entitled to see the second one stated outright.
- */
-export function summarizeDiagnostics(report: DiagnosticReport): string {
-  const parts = ALL_SEVERITIES.flatMap((severity) => {
-    const count = report.counts[severity];
-    return count > 0 ? [phrase(count, severity)] : [];
-  });
-  const eligibility = report.eFileEligible ? 'eligible for e-file' : 'not eligible for e-file';
-  if (parts.length === 0) return `No diagnostics — ${eligibility}.`;
-  return `${parts.join(', ')} — ${eligibility}.`;
+  // Schedule B informational requirement.
+  const totalInterest = model.interest.reduce(
+    (s, x) => s + x.taxableInterest + x.usGovernmentInterest,
+    0,
+  );
+  const totalDividends = model.dividends.reduce((s, x) => s + x.ordinaryDividends, 0);
+  if (totalInterest > config.scheduleBThreshold || totalDividends > config.scheduleBThreshold) {
+    diags.push(
+      info(
+        DiagnosticCodes.SCHEDULE_B_REQUIRED,
+        "Interest or dividends exceed $1,500 — Schedule B payer detail will be included",
+      ),
+    );
+  }
+
+  return diags;
 }

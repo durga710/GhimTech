@@ -2,37 +2,32 @@
   "name": "ghimtech-tax",
   "version": "0.1.0",
   "private": true,
-  "description": "GhimTech Tax — professional Federal and Pennsylvania tax preparation and e-file platform. Built by GhimTech.",
-  "packageManager": "pnpm@11.3.0",
+  "description": "GhimTech Tax — private professional tax-preparation and e-file platform. Built by GhimTech.",
+  "author": "Durga Ghimeray",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@10.33.0",
   "engines": {
-    "node": ">=22.0.0",
-    "pnpm": ">=10.0.0"
+    "node": ">=22"
   },
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md,yml,yaml}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,md,yml,yaml}\"",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "clean": "turbo run clean",
-    "verify": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test"
-  },
-  "prettier": {
-    "semi": true,
-    "singleQuote": true,
-    "trailingComma": "all",
-    "printWidth": 100,
-    "tabWidth": 2,
-    "arrowParens": "always",
-    "endOfLine": "lf"
+    "test:coverage": "turbo run test:coverage",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json,yml,yaml}\"",
+    "db:generate": "pnpm --filter @ghimtech/database db:generate",
+    "db:migrate": "pnpm --filter @ghimtech/database db:migrate",
+    "db:seed": "pnpm --filter @ghimtech/database db:seed"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
+    "@eslint/js": "^9.18.0",
+    "eslint": "^9.18.0",
     "prettier": "^3.4.2",
     "turbo": "^2.3.3",
-    "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.21.0"
   }
 }
