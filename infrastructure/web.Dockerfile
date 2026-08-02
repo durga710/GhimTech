@@ -4,6 +4,10 @@ RUN corepack enable pnpm
 WORKDIR /app
 
 FROM base AS build
+# The API origin is baked into the client bundle at build time; Railway (and
+# other CI) pass it through as a build argument.
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json tsconfig.base.json ./
 COPY packages ./packages
 COPY apps/web ./apps/web
