@@ -74,4 +74,6 @@ jobs:
         run: pnpm prisma migrate deploy
       - name: Verify schema drift
         working-directory: packages/database
-        run: pnpm prisma migrate diff --from-migrations ./prisma/migrations --to-schema-datamodel ./prisma/schema.prisma --exit-code
+        # The database was just migrated from scratch; comparing it to the
+        # schema proves migrations fully reproduce the datamodel.
+        run: pnpm prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel ./prisma/schema.prisma --exit-code

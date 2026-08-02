@@ -12,7 +12,9 @@ RUN pnpm turbo run build --filter=@ghimtech/web
 
 FROM node:22-alpine AS runtime
 ENV NODE_ENV=production
-RUN addgroup -S ghimtech && adduser -S ghimtech -G ghimtech
+RUN apk upgrade --no-cache \
+  && rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /opt/yarn* \
+  && addgroup -S ghimtech && adduser -S ghimtech -G ghimtech
 WORKDIR /app
 COPY --from=build /app/apps/web/.next/standalone ./
 COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
