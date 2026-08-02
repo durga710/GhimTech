@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+.pnp.*
+.yarn/
+
+# Build output
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Caches
+.turbo/
+.cache/
+.eslintcache
+.swc/
+
+# Test and coverage artifacts
+coverage/
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+# Environment and secrets — a tax platform must never carry credentials in git.
+# Only .env.example belongs in the repository.
+.env
+.env.*
+!.env.example
+
+# Provider credentials, signing material, and transmitter configuration
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+
+# Taxpayer data must never enter version control under any circumstances.
+# These patterns are a backstop, not a policy — the policy is that real returns,
+# source documents, and acknowledgements live in the encrypted store only.
+*.retn
+returns/
+taxpayer-documents/
+acknowledgements/
+
+# Editor and OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.swp
+Thumbs.db
+
+# Local agent workspaces
+.claude/worktrees/
