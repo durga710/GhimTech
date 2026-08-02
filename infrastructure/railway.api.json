@@ -1,0 +1,14 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "infrastructure/api.Dockerfile"
+  },
+  "deploy": {
+    "startCommand": "sh -c \"node_modules/@ghimtech/database/node_modules/.bin/prisma migrate deploy --schema node_modules/@ghimtech/database/prisma/schema.prisma && node dist/index.js\"",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 120,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5
+  }
+}

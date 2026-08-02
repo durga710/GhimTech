@@ -28,13 +28,13 @@
     "schema": "prisma/schema.prisma"
   },
   "dependencies": {
-    "@prisma/client": "^6.2.1"
+    "@prisma/client": "^6.2.1",
+    "prisma": "^6.2.1"
   },
   "devDependencies": {
     "@ghimtech/config": "workspace:*",
     "@ghimtech/security": "workspace:*",
     "@types/node": "^22.10.7",
-    "prisma": "^6.2.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }
