@@ -37,7 +37,10 @@ function AppFrame({
     <div
       role="img"
       aria-label={label}
-      className={cn('overflow-hidden rounded-xl border border-line bg-surface shadow-lg', className)}
+      className={cn(
+        'overflow-hidden rounded-xl border border-line bg-surface shadow-lg',
+        className,
+      )}
     >
       <div className="flex items-center gap-3 border-b border-line-subtle bg-canvas-alt px-3 py-2.5 sm:px-4">
         <span aria-hidden="true" className="flex shrink-0 gap-1.5">
@@ -141,7 +144,9 @@ export function ReturnWorkspacePreview({ className }: { className?: string }): R
                 key={section.label}
                 className={cn(
                   'flex items-center gap-2 rounded-sm px-2 py-1.5',
-                  section.label === 'Pennsylvania' && 'bg-surface',
+                  /* The tint rather than a raised surface: in the dark theme a
+                     surface sits too close to the sidebar to read as selected. */
+                  section.label === 'Pennsylvania' && 'bg-accent-tint',
                 )}
               >
                 <StatusDot tone={section.tone} />
@@ -278,7 +283,9 @@ export function DiagnosticsPreview({ className }: { className?: string }): React
         <span className="text-micro text-ink-muted">
           Transmission stays locked while a reject or an error is open.
         </span>
-        <span className="font-mono text-micro tabular text-ink-subtle">3 blocking · 2 advisory</span>
+        <span className="font-mono text-micro tabular text-ink-subtle">
+          3 blocking · 2 advisory
+        </span>
       </div>
     </AppFrame>
   );
@@ -386,7 +393,9 @@ export function DocumentReviewPreview({ className }: { className?: string }): Re
                 <span className="h-1 w-2/3 rounded-full bg-line-subtle" />
               </div>
             </div>
-            <p className="mt-3 text-center font-mono text-micro text-ink-subtle">W-2 · page 1 of 1</p>
+            <p className="mt-3 text-center font-mono text-micro text-ink-subtle">
+              W-2 · page 1 of 1
+            </p>
           </div>
 
           <div className="flex flex-col">
@@ -464,7 +473,11 @@ export function FilingTimelinePreview({ className }: { className?: string }): Re
             <div className="flex items-center gap-2">
               <StatusDot
                 tone={
-                  step.state === 'done' ? 'success' : step.state === 'current' ? 'accent' : 'neutral'
+                  step.state === 'done'
+                    ? 'success'
+                    : step.state === 'current'
+                      ? 'accent'
+                      : 'neutral'
                 }
               />
               <span

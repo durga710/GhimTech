@@ -120,137 +120,167 @@ export function SiteHeader(): React.JSX.Element {
     <>
       <header className="sticky top-0 z-50 border-b border-line-subtle bg-canvas/85 backdrop-blur-md">
         <div className="rail rail-wide flex h-16 items-center gap-4 md:h-18">
-        <Link
-          href="/"
-          aria-label="GhimTech Tax — home"
-          className="shrink-0 rounded-sm py-1 text-ink transition-opacity duration-150 hover:opacity-80"
-        >
-          <GhimTechTaxLockup markSize={28} scale={1.0625} />
-        </Link>
-
-        {/* ---------------------------------------------------------------- */}
-        {/* Desktop navigation                                                */}
-        {/* ---------------------------------------------------------------- */}
-        <nav aria-label="Primary" className="hidden lg:block">
-          <div ref={desktopNavRef} className="flex items-center gap-1">
-            {PRIMARY_NAV.map((group) => {
-              const open = openGroup === group.label;
-              const panelId = `nav-group-${group.label.toLowerCase()}`;
-              const active = group.links.some((link) => isCurrent(link.href));
-
-              return (
-                <div
-                  key={group.label}
-                  className="relative"
-                  onPointerEnter={() => setOpenGroup(group.label)}
-                  onPointerLeave={() =>
-                    setOpenGroup((current) => (current === group.label ? null : current))
-                  }
-                >
-                  <button
-                    type="button"
-                    ref={(node) => {
-                      groupButtonRefs.current[group.label] = node;
-                    }}
-                    aria-expanded={open}
-                    aria-controls={panelId}
-                    onClick={() =>
-                      setOpenGroup((current) => (current === group.label ? null : group.label))
-                    }
-                    className={cn(
-                      'inline-flex h-10 items-center gap-1.5 rounded-md px-3 text-ui font-medium transition-colors duration-150',
-                      active || open ? 'text-ink' : 'text-ink-muted hover:text-ink',
-                      open && 'bg-canvas-alt',
-                    )}
-                  >
-                    {group.label}
-                    <ChevronIcon open={open} />
-                  </button>
-
-                  <div
-                    id={panelId}
-                    hidden={!open}
-                    className="absolute left-0 top-full z-10 w-[24rem] pt-2"
-                  >
-                    <ul className="flex flex-col gap-0.5 rounded-lg border border-line-subtle bg-surface-raised p-2 shadow-lg">
-                      {group.links.map((link) => (
-                        <li key={link.href}>
-                          <Link
-                            href={link.href}
-                            aria-current={isCurrent(link.href) ? 'page' : undefined}
-                            className={cn(
-                              'block rounded-md px-3 py-2.5 transition-colors duration-150 hover:bg-canvas-alt',
-                              isCurrent(link.href) && 'bg-accent-tint',
-                            )}
-                          >
-                            <span className="block text-ui font-medium text-ink">{link.label}</span>
-                            {link.description ? (
-                              <span className="mt-0.5 block text-sm text-ink-muted">
-                                {link.description}
-                              </span>
-                            ) : null}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </nav>
-
-        <div className="ms-auto flex items-center gap-2">
-          <ThemeToggle />
-
           <Link
-            href={CLIENT_PORTAL_HREF}
-            className="hidden h-10 items-center rounded-md px-3 text-ui font-medium text-ink-muted transition-colors duration-150 hover:bg-canvas-alt hover:text-ink lg:inline-flex"
+            href="/"
+            aria-label="GhimTech Tax — home"
+            className="shrink-0 rounded-sm py-1 text-ink transition-opacity duration-150 hover:opacity-80"
           >
-            Client portal
+            <GhimTechTaxLockup markSize={28} scale={1.0625} />
           </Link>
 
-          <ButtonLink href={SIGN_IN_HREF} variant="secondary" className="hidden lg:inline-flex">
-            Sign in
-          </ButtonLink>
+          {/* ---------------------------------------------------------------- */}
+          {/* Desktop navigation                                                */}
+          {/* ---------------------------------------------------------------- */}
+          <nav aria-label="Primary" className="hidden lg:block">
+            <div ref={desktopNavRef} className="flex items-center gap-1">
+              {PRIMARY_NAV.map((group) => {
+                const open = openGroup === group.label;
+                const panelId = `nav-group-${group.label.toLowerCase()}`;
+                const active = group.links.some((link) => isCurrent(link.href));
 
-          {/* ------------------------------------------------------------ */}
-          {/* Mobile disclosure                                             */}
-          {/* ------------------------------------------------------------ */}
-          <button
-            type="button"
-            ref={mobileToggleRef}
-            aria-expanded={mobileOpen}
-            aria-controls={MOBILE_MENU_ID}
-            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-            onClick={() => setMobileOpen((current) => !current)}
-            className="inline-flex size-10 items-center justify-center rounded-md border border-line text-ink transition-colors duration-150 hover:bg-canvas-alt lg:hidden"
-          >
-            {mobileOpen ? (
-              <svg viewBox="0 0 20 20" className="size-4.5" fill="none" aria-hidden="true">
-                <path
-                  d="m5 5 10 10M15 5 5 15"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 20 20" className="size-4.5" fill="none" aria-hidden="true">
-                <path
-                  d="M3 6h14M3 10h14M3 14h14"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                />
-              </svg>
-            )}
-          </button>
+                return (
+                  <div
+                    key={group.label}
+                    className="relative"
+                    onPointerEnter={() => setOpenGroup(group.label)}
+                    onPointerLeave={() =>
+                      setOpenGroup((current) => (current === group.label ? null : current))
+                    }
+                  >
+                    <button
+                      type="button"
+                      ref={(node) => {
+                        groupButtonRefs.current[group.label] = node;
+                      }}
+                      aria-expanded={open}
+                      aria-controls={panelId}
+                      /*
+                       * Pointer and keyboard need different answers here. A
+                       * mouse has already opened this panel by hovering, so a
+                       * plain toggle would close it on the very click that was
+                       * meant to commit to it. `detail === 0` identifies a
+                       * keyboard activation, which has had no hover and so
+                       * genuinely toggles.
+                       */
+                      onClick={(event) => {
+                        if (event.detail === 0) {
+                          setOpenGroup((current) => (current === group.label ? null : group.label));
+                        } else {
+                          setOpenGroup(group.label);
+                        }
+                      }}
+                      className={cn(
+                        'inline-flex h-10 items-center gap-1.5 rounded-md px-3 text-ui font-medium transition-colors duration-150',
+                        active || open ? 'text-ink' : 'text-ink-muted hover:text-ink',
+                        open && 'bg-canvas-alt',
+                      )}
+                    >
+                      {group.label}
+                      <ChevronIcon open={open} />
+                    </button>
+
+                    <div
+                      id={panelId}
+                      hidden={!open}
+                      className="absolute left-0 top-full z-10 w-[24rem] pt-2"
+                    >
+                      <ul className="flex flex-col gap-0.5 rounded-lg border border-line-subtle bg-surface-raised p-2 shadow-lg">
+                        {group.links.map((link) => (
+                          <li key={link.href}>
+                            <Link
+                              href={link.href}
+                              aria-current={isCurrent(link.href) ? 'page' : undefined}
+                              className={cn(
+                                'block rounded-md px-3 py-2.5 transition-colors duration-150 hover:bg-canvas-alt',
+                                isCurrent(link.href) && 'bg-accent-tint',
+                              )}
+                            >
+                              <span className="block text-ui font-medium text-ink">
+                                {link.label}
+                              </span>
+                              {link.description ? (
+                                <span className="mt-0.5 block text-sm text-ink-muted">
+                                  {link.description}
+                                </span>
+                              ) : null}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </nav>
+
+          <div className="ms-auto flex items-center gap-2">
+            <ThemeToggle />
+
+            <Link
+              href={CLIENT_PORTAL_HREF}
+              className="hidden h-10 items-center rounded-md px-3 text-ui font-medium text-ink-muted transition-colors duration-150 hover:bg-canvas-alt hover:text-ink lg:inline-flex"
+            >
+              Client portal
+            </Link>
+
+            {/*
+              Wrapped rather than given `hidden lg:inline-flex` directly: the
+              button primitive already sets `inline-flex`, and `cn` joins class
+              names without resolving conflicts on purpose, so a display utility
+              passed through `className` would lose to the one baked into the
+              variant. Hiding the wrapper is unambiguous.
+            */}
+            <span className="hidden lg:block">
+              <ButtonLink href={SIGN_IN_HREF} variant="secondary">
+                Sign in
+              </ButtonLink>
+            </span>
+
+            {/* ------------------------------------------------------------ */}
+            {/* Mobile disclosure                                             */}
+            {/* ------------------------------------------------------------ */}
+            <button
+              type="button"
+              ref={mobileToggleRef}
+              aria-expanded={mobileOpen}
+              aria-controls={MOBILE_MENU_ID}
+              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              onClick={() => setMobileOpen((current) => !current)}
+              className="inline-flex size-10 items-center justify-center rounded-md border border-line text-ink transition-colors duration-150 hover:bg-canvas-alt lg:hidden"
+            >
+              {mobileOpen ? (
+                <svg viewBox="0 0 20 20" className="size-4.5" fill="none" aria-hidden="true">
+                  <path
+                    d="m5 5 10 10M15 5 5 15"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 20 20" className="size-4.5" fill="none" aria-hidden="true">
+                  <path
+                    d="M3 6h14M3 10h14M3 14h14"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* ------------------------------------------------------------------ */}
       {/* Mobile panel                                                        */}
+      {/*                                                                     */}
+      {/* Deliberately a sibling of <header> rather than a child. The header  */}
+      {/* carries `backdrop-filter`, which makes it a containing block for    */}
+      {/* fixed-position descendants — a panel nested inside it would be      */}
+      {/* positioned against the 64px header box and collapse to a hairline   */}
+      {/* instead of covering the viewport.                                   */}
       {/* ------------------------------------------------------------------ */}
       <div
         id={MOBILE_MENU_ID}
@@ -300,6 +330,6 @@ export function SiteHeader(): React.JSX.Element {
           </div>
         </nav>
       </div>
-    </header>
+    </>
   );
 }

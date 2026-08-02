@@ -194,8 +194,8 @@ export default function ProductPage(): React.JSX.Element {
 
         <HairlineGrid className="mt-14" columns={3}>
           <HairlineCell index="A" title="Identity and household">
-            Names, identification numbers and dependents, checked for the defects that cause a return
-            to be refused before a single dollar figure is read.
+            Names, identification numbers and dependents, checked for the defects that cause a
+            return to be refused before a single dollar figure is read.
           </HairlineCell>
           <HairlineCell index="B" title="Income and adjustments">
             Wages, interest, dividends, capital transactions, business and rental income, and the

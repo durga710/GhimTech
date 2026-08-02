@@ -115,7 +115,10 @@ const WORKFLOW_STAGES = [
 ] as const;
 
 const FEDERAL_FORMS = [
-  { term: 'Form 1040', detail: 'The return, with the filing status and dependent logic behind it.' },
+  {
+    term: 'Form 1040',
+    detail: 'The return, with the filing status and dependent logic behind it.',
+  },
   { term: 'Schedules 1–3', detail: 'Additional income, adjustments, credits and other taxes.' },
   { term: 'Schedule A', detail: 'Itemized deductions, tested against the standard deduction.' },
   { term: 'Schedules B and D', detail: 'Interest and dividends; capital gains and losses.' },
@@ -258,8 +261,8 @@ export default function HomePage(): React.JSX.Element {
             is dealt with before a submission is ever built.
           </HairlineCell>
           <HairlineCell level={2} title="A portal the taxpayer will use">
-            One short list of what is outstanding, in plain language, with a place to upload it and a
-            signature at the end.
+            One short list of what is outstanding, in plain language, with a place to upload it and
+            a signature at the end.
           </HairlineCell>
         </HairlineGrid>
       </Section>
