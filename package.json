@@ -1,45 +1,33 @@
 {
-  "name": "ghimtech-tax",
-  "version": "0.1.0",
+  "name": "ghimtech",
+  "version": "1.0.0",
   "private": true,
-  "description": "GhimTech Tax — private professional tax-preparation and e-file platform. Built by GhimTech.",
   "author": "Durga Ghimeray",
   "license": "UNLICENSED",
   "packageManager": "pnpm@10.33.0",
-  "engines": {
-    "node": ">=22"
-  },
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
-    "test:coverage": "turbo run test:coverage",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json,yml,yaml}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,md,json,yml,yaml}\"",
-    "db:generate": "pnpm --filter @ghimtech/database db:generate",
-    "db:migrate": "pnpm --filter @ghimtech/database db:migrate",
-    "db:seed": "pnpm --filter @ghimtech/database db:seed"
+    "build": "pnpm --filter @ghimtech/web build",
+    "dev": "pnpm --filter @ghimtech/web dev",
+    "start": "pnpm --filter @ghimtech/web start",
+    "lint": "eslint apps/web/src",
+    "typecheck": "pnpm --filter @ghimtech/web typecheck",
+    "test": "node --test apps/web/tests/*.test.mjs",
+    "format": "prettier --write \"**/*.{ts,tsx,css,md,json,yml,yaml,mjs}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,css,md,json,yml,yaml,mjs}\""
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
     "eslint": "^9.18.0",
     "prettier": "^3.4.2",
-    "turbo": "^2.3.3",
+    "typescript-eslint": "^8.21.0",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.21.0"
+    "@next/eslint-plugin-next": "^15.5.24"
   },
   "pnpm": {
     "overrides": {
-      "postcss": ">=8.5.18",
-      "sharp": ">=0.35.0"
+      "postcss": ">=8.5.23"
     },
     "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "prisma",
-      "esbuild",
       "sharp"
     ]
   }

@@ -1,83 +1,62 @@
-# GhimTech Tax
+# GhimTech
 
-**GhimTech Tax — Built by GhimTech.** A private professional tax-preparation and e-file platform for federal (Form 1040) and Pennsylvania (PA-40) individual returns, developed and operated by GhimTech.
+Software built around how your business actually works.
 
-The initial deployment serves GhimTech's own preparation practice — the owner, family, friends, and a small set of approved clients — on a codebase engineered to production standards so future commercial expansion needs no rewrite.
+GhimTech is Durga Ghimeray’s software studio, focused on custom business software, CRM systems, workflow automation, and operational tools. CyanjelHomeCare LLC is the flagship customer.
 
-## What it does
+## Application
 
-- **Client management and guided intake** with encrypted identity capture (SSNs and bank numbers are envelope-encrypted; only last-4 is ever displayed)
-- **Document vault**: hardened uploads (magic-byte validation, malware scanning), OCR suggestions that always require human verification
-- **Deterministic tax engines** for tax year 2025 — federal Form 1040 (standard/itemized deductions, CTC/ODC/ACTC, EITC, AOTC/LLC, dependent care credit, SE tax, QBI simplified, Social Security taxability, preferential capital-gain rates) and PA-40 (income classes, flat 3.07%, Schedule SP tax forgiveness) — with every value traceable to versioned rules and covered by regression tests. **No AI ever computes tax.**
-- **Diagnostics** that block unsupported or inconsistent returns from filing
-- **A 23-state filing lifecycle** with role-checked transitions, reviewer separation, and mandatory human review
-- **Electronic signature** bound to the exact calculation snapshot; any material change invalidates signatures
-- **Provider-neutral e-filing** through an authorized transmitter adapter (mock and sandbox providers today; Column Tax / april / other adapters slot in without touching business logic)
-- **Hash-chained audit logging** of every sensitive action
+The public website uses Next.js App Router, React, and TypeScript in `apps/web`. Pages render on the server; interactive workflow explorers and the enquiry form are small client components. Styling is local CSS with system fonts and no animation library.
 
-## Repository layout
+Requirements: Node.js 22 or newer, pnpm 10.33.
 
-```
-apps/
-  web/        Next.js application (GhimTech Tax UI)
-  api/        Fastify REST API
-  worker/     BullMQ background worker (ack polling, OCR, comms)
-packages/
-  tax-domain/               Normalized return model, lifecycle, permissions, money
-  tax-year-config/          Versioned per-year rule values (2025)
-  tax-engine-federal/       Deterministic Form 1040 engine
-  tax-engine-pennsylvania/  Deterministic PA-40 engine
-  forms-engine/             Form mapping, snapshots, printable documents
-  document-processing/      Upload hardening, OCR boundary, verification workflow
-  efile-core/               Provider contracts, orchestration, rejection dictionary
-  efile-providers/          Mock, sandbox, and placeholder transmitter adapters
-  database/                 Prisma schema, migrations, seed
-  security/                 Envelope encryption, masking, passwords, TOTP, tokens
-  audit/                    Hash-chained audit events
-  validation/               Zod schemas and identifier validators
-  ui/                       GhimTech Tax design-system components
-  testing/                  Synthetic taxpayer fixtures (never real data)
-infrastructure/             Dockerfiles
-docs/                       Architecture, security, tax rules, runbooks, ADRs
-```
-
-## Quick start
-
-Requirements: Node 22+, pnpm 10+, Docker (for Postgres/Redis).
-
-```bash
-pnpm install
-cp .env.example .env          # generate the two keys as instructed inside
-
-# Fastest path — no database needed (in-memory store, mock e-file provider):
-GHIMTECH_STORE=memory pnpm --filter @ghimtech/api dev
-pnpm --filter @ghimtech/web dev   # in a second terminal → http://localhost:3000
-
-# Full stack with Postgres:
-docker compose up -d
-pnpm --filter @ghimtech/database db:migrate:dev
-pnpm --filter @ghimtech/database db:seed   # synthetic dev users + client
+```sh
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Seeded development sign-ins (`GhimTechDev2026!`, password reset + MFA enrollment forced): `admin@dev.ghimtech.test`, `preparer@dev.ghimtech.test`, `reviewer@dev.ghimtech.test`, `client@dev.ghimtech.test`.
+Open http://localhost:3000.
 
-## Verification
-
-```bash
-pnpm lint && pnpm typecheck && pnpm test && pnpm build
+```sh
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm start
 ```
 
-The test suite covers the tax engines against hand-computed 2025 scenarios, the full filing lifecycle end-to-end over the real API (including rejection → correction → resubmission), permission and MFA flows, encryption, upload security, and provider contract tests.
+## Configuration
 
-## Documentation
+Copy `.env.example` to `apps/web/.env.local` for local development. Configure production values through the hosting provider.
 
-Start with [docs/architecture.md](docs/architecture.md). Security: [docs/security-model.md](docs/security-model.md) and [docs/threat-model.md](docs/threat-model.md). Tax rules and sources: [docs/tax-rules/](docs/tax-rules/). E-file integration: [docs/efile-providers.md](docs/efile-providers.md). Live status: [docs/PROGRESS.md](docs/PROGRESS.md).
+- `NEXT_PUBLIC_SITE_URL`: the canonical public origin, defaulting to https://ghimtech.org.
+- `PROJECT_WEBHOOK_URL`: an HTTPS endpoint under your control that durably receives enquiries.
+- `PROJECT_WEBHOOK_TOKEN`: server-only bearer credential for that endpoint.
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`: shared Redis service for atomic rate limiting.
+- `RATE_LIMIT_SECRET`: random server-only secret used to hash identifiers.
 
-## Important limits (enforced by blocking diagnostics)
+The form fails closed with an explicit, recoverable error when delivery or rate limiting is unconfigured. It does not claim to have received an enquiry when nothing has been delivered.
 
-Unsupported situations cannot be e-filed — they surface as ERROR diagnostics and stop the pipeline. Highlights: part-year/nonresident PA returns (modeled, not filable), Schedule C losses or complex businesses, marketplace insurance reconciliation (Form 8962), Form 8995-A QBI, multi-state wages, MFS with Social Security. See [docs/tax-rules/](docs/tax-rules/) for the full list.
+The receiving endpoint must validate the bearer token, honor the `Idempotency-Key` header for at least 24 hours, and acknowledge with 2xx only after durable receipt. Retries keep the same idempotency key for unchanged content. Do not expose these credentials through public environment variables.
 
----
+On Vercel, the endpoint uses the platform-controlled forwarded IP header. Other hosts use a shared request bucket until trusted proxy handling is explicitly configured. Rate limits are 20 attempts per request-identity bucket and 5 per normalized email address per hour. The application stores hashed rate-limit identifiers with a one-hour expiry.
 
-© GhimTech. Author and maintainer: Durga Ghimeray. Private software — not licensed for redistribution.
+## Content
+
+- `apps/web/src/lib/content.ts`: service descriptions, projects, workflow modules, and articles.
+- `apps/web/src/app/work/cyanjel-homecare/page.tsx`: flagship case study.
+- `apps/web/src/app/globals.css`: responsive design system.
+
+The case study separates confirmed customer positioning from illustrative workflow explanations. Specific product capabilities, real screenshots, and measured outcomes require source material or founder confirmation before publication. The project data model supports these fields without inventing them.
+
+For a future case study, add its project data and route, then include it in the Work index. Sitemap entries are derived from the content list.
+
+## Deployment
+
+The root `vercel.json` retains the existing `apps/web` output location. Use the repository root as the project root. Preview hosts must set `NEXT_PUBLIC_SITE_URL` to their own origin if the form is to be exercised there.
+
+Set GHIMTECH_STANDALONE=1 when building a Linux self-hosted image to enable standalone output. Copy the standalone server, `public`, and `.next/static` into the runtime image as documented by Next.js.
+
+Read [release notes](docs/release-notes.md) before publishing.
+
+© GhimTech. Author and maintainer: Durga Ghimeray.

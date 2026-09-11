@@ -1,11 +1,7 @@
 import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  transpilePackages: ["@ghimtech/ui", "@ghimtech/tax-domain"],
-  // Standalone output is for the self-hosted Docker image; Vercel manages
-  // its own build output.
-  output: process.env.VERCEL ? undefined : "standalone",
+const config: NextConfig = {
   poweredByHeader: false,
+  output: process.env.GHIMTECH_STANDALONE === "1" ? "standalone" : undefined,
   headers: async () => [
     {
       source: "/:path*",
@@ -13,14 +9,17 @@ const nextConfig: NextConfig = {
         { key: "X-Frame-Options", value: "DENY" },
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        { key: "Strict-Transport-Security", value: "max-age=31536000" },
         {
           key: "Content-Security-Policy",
           value:
-            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://localhost:4000 https://*.ghimtech.org https://*.up.railway.app; frame-ancestors 'none'",
+            "default-src 'self'; script-src 'self' 'unsafe-inline'" +
+            (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "") +
+            "; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
         },
       ],
     },
   ],
 };
-
-export default nextConfig;
+export default config;

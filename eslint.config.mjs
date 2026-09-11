@@ -1,34 +1,15 @@
+import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
-
+import next from "@next/eslint-plugin-next";
 export default tseslint.config(
-  {
-    ignores: [
-      "**/node_modules/**",
-      "**/dist/**",
-      "**/.next/**",
-      "**/.turbo/**",
-      "**/coverage/**",
-      "packages/database/src/generated/**",
-      "apps/web/**", // linted by next lint inside the app
-    ],
-  },
+  { ignores: ["**/node_modules/**", "**/.next/**"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
-      ],
-      "@typescript-eslint/no-explicit-any": "warn",
-      "no-console": ["error", { allow: ["warn", "error"] }],
-    },
-  },
-  {
-    files: ["**/*.test.ts", "**/*.spec.ts", "**/scripts/**", "**/seed.ts"],
-    rules: {
-      "no-console": "off",
-    },
+    settings: { next: { rootDir: fileURLToPath(new URL("./apps/web", import.meta.url)) } },
+    languageOptions: { globals: { URL: "readonly" } },
+    plugins: { "@next/next": next },
+    rules: { ...next.configs.recommended.rules, ...next.configs["core-web-vitals"].rules },
   },
 );
