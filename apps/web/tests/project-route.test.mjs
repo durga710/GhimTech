@@ -217,7 +217,9 @@ test("accepts the Vercel Marketplace KV variable names and derives the hashing s
   const calls = [];
   globalThis.fetch = async (url, options) => {
     calls.push({ url: String(url), options });
-    return String(url).includes("kv.example") ? Response.json({ result: 1 }) : Response.json({ id: "x" });
+    return String(url).includes("kv.example")
+      ? Response.json({ result: 1 })
+      : Response.json({ id: "x" });
   };
   assert.equal((await POST(request())).status, 200);
   assert.equal(calls[0].url, "https://kv.example.com");

@@ -30,14 +30,20 @@ pnpm start
 Copy `.env.example` to `apps/web/.env.local` for local development. Configure production values through the hosting provider.
 
 - `NEXT_PUBLIC_SITE_URL`: the canonical public origin, defaulting to https://ghimtech.org.
-- `PROJECT_WEBHOOK_URL`: an HTTPS endpoint under your control that durably receives enquiries.
-- `PROJECT_WEBHOOK_TOKEN`: server-only bearer credential for that endpoint.
-- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`: shared Redis service for atomic rate limiting.
-- `RATE_LIMIT_SECRET`: random server-only secret used to hash identifiers.
 
-The form fails closed with an explicit, recoverable error when delivery or rate limiting is unconfigured. It does not claim to have received an enquiry when nothing has been delivered.
+Enquiry delivery uses one of two modes. The webhook wins when both are configured.
 
-The receiving endpoint must validate the bearer token, honor the `Idempotency-Key` header for at least 24 hours, and acknowledge with 2xx only after durable receipt. Retries keep the same idempotency key for unchanged content. Do not expose these credentials through public environment variables.
+- `RESEND_API_KEY` and `ENQUIRY_INBOX`: email each enquiry through [Resend](https://resend.com) to that inbox. `ENQUIRY_FROM` is optional; the default `onboarding@resend.dev` sender only delivers to the Resend account owner's own address, so set a verified-domain sender for anything else.
+- `PROJECT_WEBHOOK_URL` and `PROJECT_WEBHOOK_TOKEN`: an HTTPS endpoint under your control that durably receives enquiries, with its server-only bearer credential.
+
+Rate limiting needs a shared Redis service.
+
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`, or the `KV_REST_API_URL` and `KV_REST_API_TOKEN` pair that the Upstash integration on the Vercel Marketplace injects.
+- `RATE_LIMIT_SECRET`: optional server-only secret used to hash identifiers. When unset it is derived from the Redis token.
+
+The form fails closed with an explicit, recoverable error when delivery or rate limiting is unconfigured. It does not claim to have received an enquiry when nothing has been delivered. The page and footer show `hello@ghimtech.org` as a direct alternative.
+
+A webhook receiver must validate the bearer token, honor the `Idempotency-Key` header for at least 24 hours, and acknowledge with 2xx only after durable receipt. Retries keep the same idempotency key for unchanged content. Do not expose these credentials through public environment variables.
 
 On Vercel, the endpoint uses the platform-controlled forwarded IP header. Other hosts use a shared request bucket until trusted proxy handling is explicitly configured. Rate limits are 20 attempts per request-identity bucket and 5 per normalized email address per hour. The application stores hashed rate-limit identifiers with a one-hour expiry.
 
@@ -53,7 +59,7 @@ For a future case study, add its project data and route, then include it in the 
 
 ## Deployment
 
-The root `vercel.json` retains the existing `apps/web` output location. Use the repository root as the project root. Preview hosts must set `NEXT_PUBLIC_SITE_URL` to their own origin if the form is to be exercised there.
+The site is deployed on Vercel from this repository. The Vercel project's Root Directory must be `apps/web`, and the root `vercel.json` only declares the Next.js framework; do not add build, install, or output paths there, because Vercel resolves them relative to the root directory and doubles the path. Preview hosts must set `NEXT_PUBLIC_SITE_URL` to their own origin if the form is to be exercised there.
 
 Set GHIMTECH_STANDALONE=1 when building a Linux self-hosted image to enable standalone output. Copy the standalone server, `public`, and `.next/static` into the runtime image as documented by Next.js.
 

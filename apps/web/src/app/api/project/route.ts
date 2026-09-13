@@ -118,7 +118,10 @@ export async function POST(request: Request) {
   // derived from the Redis token, which anyone able to read the keys already holds.
   const secret =
     process.env.RATE_LIMIT_SECRET ||
-    (redisToken && createHash("sha256").update("ghimtech-rate-limit:" + redisToken).digest("hex"));
+    (redisToken &&
+      createHash("sha256")
+        .update("ghimtech-rate-limit:" + redisToken)
+        .digest("hex"));
   const viaWebhook = !!(webhook && token);
   const viaResend = !!(resendKey && inbox && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inbox));
   if ((!viaWebhook && !viaResend) || !redis || !redisToken || !secret)

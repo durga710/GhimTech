@@ -22,7 +22,7 @@ Product screenshots, verified feature status, technical architecture, and measur
 
 ## Delivery gate
 
-Configure the production enquiry receiver, its bearer credential, Redis rate limiting, and a random rate-limit secret. Verify a real enquiry reaches the intended durable destination and that retrying it does not duplicate the record. The endpoint returns an error until required services are configured.
+Configure enquiry delivery (Resend API key and inbox, or a webhook receiver with its bearer credential) and Redis rate limiting. Verify a real enquiry reaches the intended destination and that retrying it does not duplicate the record. The endpoint returns an error until required services are configured, and the site shows a direct email address as the fallback channel.
 
 Review the privacy notice against the actual receiver, retention practices, and any hosting analytics added at deployment.
 
