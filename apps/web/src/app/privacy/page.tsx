@@ -39,10 +39,10 @@ export default function Privacy() {
         </p>
         <h2>Questions and deletion requests</h2>
         <p>
-          Email <a href={"mailto:" + contactEmail}>{contactEmail}</a>, use the project enquiry
-          form, or reply to an existing GhimTech conversation to request access, correction, or
-          deletion of information you have submitted. Information needed for an ongoing engagement
-          or recordkeeping may need to be retained.
+          Email <a href={"mailto:" + contactEmail}>{contactEmail}</a>, use the project enquiry form,
+          or reply to an existing GhimTech conversation to request access, correction, or deletion
+          of information you have submitted. Information needed for an ongoing engagement or
+          recordkeeping may need to be retained.
         </p>
         <h2>Scope</h2>
         <p>
