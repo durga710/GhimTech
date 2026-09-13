@@ -39,6 +39,8 @@ const keys = [
   "RESEND_API_KEY",
   "ENQUIRY_INBOX",
   "ENQUIRY_FROM",
+  "KV_REST_API_URL",
+  "KV_REST_API_TOKEN",
 ];
 const original = Object.fromEntries(keys.map((k) => [k, process.env[k]]));
 function request(data = valid, headers = {}) {
@@ -204,4 +206,27 @@ test("webhook takes precedence when both deliveries are configured", async () =>
   };
   assert.equal((await POST(request())).status, 200);
   assert.deepEqual(urls, ["https://redis.example.com", "https://receiver.example.com"]);
+});
+test("accepts the Vercel Marketplace KV variable names and derives the hashing secret", async () => {
+  setupResend();
+  delete process.env.UPSTASH_REDIS_REST_URL;
+  delete process.env.UPSTASH_REDIS_REST_TOKEN;
+  delete process.env.RATE_LIMIT_SECRET;
+  process.env.KV_REST_API_URL = "https://kv.example.com";
+  process.env.KV_REST_API_TOKEN = "kv-test-only";
+  const calls = [];
+  globalThis.fetch = async (url, options) => {
+    calls.push({ url: String(url), options });
+    return String(url).includes("kv.example") ? Response.json({ result: 1 }) : Response.json({ id: "x" });
+  };
+  assert.equal((await POST(request())).status, 200);
+  assert.equal(calls[0].url, "https://kv.example.com");
+  assert.equal(calls[0].options.headers.Authorization, "Bearer kv-test-only");
+  const keysUsed = JSON.parse(calls[0].options.body).slice(3);
+  assert.match(keysUsed[0], /^ghimtech:ip:[0-9a-f]{64}$/);
+  assert.match(keysUsed[1], /^ghimtech:email:[0-9a-f]{64}$/);
+  // Still fails closed with no Redis at all.
+  delete process.env.KV_REST_API_URL;
+  delete process.env.KV_REST_API_TOKEN;
+  assert.equal((await POST(request())).status, 503);
 });

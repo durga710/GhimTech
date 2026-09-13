@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { validateEnquiry } from "@/lib/enquiry.mjs";
 import { siteUrl } from "@/lib/site";
 export const runtime = "nodejs";
@@ -111,9 +111,14 @@ export async function POST(request: Request) {
   const resendKey = process.env.RESEND_API_KEY;
   const inbox = process.env.ENQUIRY_INBOX;
   const sender = process.env.ENQUIRY_FROM || "GhimTech Enquiries <onboarding@resend.dev>";
-  const redis = process.env.UPSTASH_REDIS_REST_URL;
-  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-  const secret = process.env.RATE_LIMIT_SECRET;
+  // Upstash via the Vercel Marketplace injects KV_REST_API_*; a direct Upstash setup uses UPSTASH_REDIS_REST_*.
+  const redis = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  // Hashing secret keeps stored IP and email keys unlinkable. Without an explicit one it is
+  // derived from the Redis token, which anyone able to read the keys already holds.
+  const secret =
+    process.env.RATE_LIMIT_SECRET ||
+    (redisToken && createHash("sha256").update("ghimtech-rate-limit:" + redisToken).digest("hex"));
   const viaWebhook = !!(webhook && token);
   const viaResend = !!(resendKey && inbox && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inbox));
   if ((!viaWebhook && !viaResend) || !redis || !redisToken || !secret)
