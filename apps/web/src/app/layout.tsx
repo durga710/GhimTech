@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Header } from "@/components/site-shell";
 import { Footer } from "@/components/primitives";
-import { siteUrl } from "@/lib/site";
+import { contactEmail, siteUrl } from "@/lib/site";
 import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -23,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         name: "GhimTech",
         url: siteUrl,
         description: "Custom business software and operational systems.",
+        email: contactEmail,
         founder: { "@id": siteUrl + "/#founder" },
       },
       {
