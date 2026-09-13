@@ -36,6 +36,9 @@ const keys = [
   "UPSTASH_REDIS_REST_URL",
   "UPSTASH_REDIS_REST_TOKEN",
   "RATE_LIMIT_SECRET",
+  "RESEND_API_KEY",
+  "ENQUIRY_INBOX",
+  "ENQUIRY_FROM",
 ];
 const original = Object.fromEntries(keys.map((k) => [k, process.env[k]]));
 function request(data = valid, headers = {}) {
@@ -136,4 +139,69 @@ test("network failures preserve an explicit failure response", async () => {
   const response = await POST(request());
   assert.equal(response.status, 503);
   assert.ok(!(await response.text()).includes("Internal network details"));
+});
+function setupResend() {
+  process.env.RESEND_API_KEY = "re_test_only";
+  process.env.ENQUIRY_INBOX = "owner@example.com";
+  process.env.UPSTASH_REDIS_REST_URL = "https://redis.example.com";
+  process.env.UPSTASH_REDIS_REST_TOKEN = "test-only";
+  process.env.RATE_LIMIT_SECRET = "test-only-random-secret";
+}
+test("resend delivery emails the inbox with reply-to and an idempotency key", async () => {
+  setupResend();
+  const sent = [];
+  globalThis.fetch = async (url, options) => {
+    if (String(url).includes("redis")) return Response.json({ result: 1 });
+    sent.push({ url: String(url), options });
+    return Response.json({ id: "email-id" });
+  };
+  const response = await POST(request({ ...valid, name: "Line\nBreak", context: "More\ndetail" }));
+  assert.equal(response.status, 200);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].url, "https://api.resend.com/emails");
+  assert.equal(sent[0].options.headers.Authorization, "Bearer re_test_only");
+  assert.match(sent[0].options.headers["Idempotency-Key"], /^[0-9a-f]{64}$/);
+  assert.equal(sent[0].options.redirect, "error");
+  const body = JSON.parse(sent[0].options.body);
+  assert.deepEqual(body.to, ["owner@example.com"]);
+  assert.equal(body.reply_to, valid.email);
+  assert.equal(body.from, "GhimTech Enquiries <onboarding@resend.dev>");
+  assert.equal(body.subject, "Project enquiry: Line Break at Example");
+  assert.ok(body.text.includes("What is slowing them down\nManual intake"));
+  assert.ok(body.text.includes("Additional context\nMore\ndetail"));
+  assert.ok(!body.text.includes("undefined"));
+});
+test("resend mode honours a configured sender and fails closed on rejection", async () => {
+  setupResend();
+  process.env.ENQUIRY_FROM = "GhimTech <hello@ghimtech.org>";
+  let from;
+  globalThis.fetch = async (url, options) => {
+    if (String(url).includes("redis")) return Response.json({ result: 1 });
+    from = JSON.parse(options.body).from;
+    return Response.json({ message: "invalid key" }, { status: 401 });
+  };
+  assert.equal((await POST(request())).status, 503);
+  assert.equal(from, "GhimTech <hello@ghimtech.org>");
+});
+test("resend mode requires a valid inbox and the shared limiter", async () => {
+  globalThis.fetch = () => {
+    throw new Error("Must not send");
+  };
+  setupResend();
+  process.env.ENQUIRY_INBOX = "not-an-email";
+  assert.equal((await POST(request())).status, 503);
+  setupResend();
+  delete process.env.UPSTASH_REDIS_REST_URL;
+  assert.equal((await POST(request())).status, 503);
+});
+test("webhook takes precedence when both deliveries are configured", async () => {
+  setup();
+  setupResend();
+  const urls = [];
+  globalThis.fetch = async (url) => {
+    urls.push(String(url));
+    return Response.json({ result: 1 });
+  };
+  assert.equal((await POST(request())).status, 200);
+  assert.deepEqual(urls, ["https://redis.example.com", "https://receiver.example.com"]);
 });

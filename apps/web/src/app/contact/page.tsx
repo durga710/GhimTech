@@ -1,6 +1,6 @@
 import { PageIntro } from "@/components/primitives";
 import { ProjectForm } from "@/components/project-form";
-import { pageMetadata } from "@/lib/site";
+import { contactEmail, pageMetadata } from "@/lib/site";
 export const metadata = pageMetadata(
   "Start a Project",
   "Tell GhimTech about the workflow, manual process, or administrative bottleneck that is slowing your business down.",
@@ -31,6 +31,9 @@ export default function Contact() {
             <li>We review where a system could help.</li>
             <li>We discuss scope, fit, and a practical next step.</li>
           </ol>
+          <p className="contact-email">
+            Prefer email? Write to <a href={"mailto:" + contactEmail}>{contactEmail}</a>.
+          </p>
         </aside>
         <ProjectForm />
       </div>

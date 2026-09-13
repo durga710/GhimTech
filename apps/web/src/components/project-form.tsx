@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { budgets, timelines, validateEnquiry } from "@/lib/enquiry.mjs";
+import { contactEmail } from "@/lib/site";
 type Errors = Record<string, string>;
 export function ProjectForm() {
   const [errors, setErrors] = useState<Errors>({});
@@ -186,6 +187,12 @@ export function ProjectForm() {
       >
         {success && <h2>A useful conversation starts here.</h2>}
         {status && <p>{status}</p>}
+        {status && !success && (
+          <p>
+            You can also send the same details by email to{" "}
+            <a href={"mailto:" + contactEmail}>{contactEmail}</a>.
+          </p>
+        )}
       </div>
     </div>
   );

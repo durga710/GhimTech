@@ -1230,6 +1230,16 @@ a:hover {
 .contact-aside li {
   padding: 10px 0;
 }
+.contact-email {
+  margin-top: 20px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.contact-email a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .project-form {
   min-width: 0;
 }
