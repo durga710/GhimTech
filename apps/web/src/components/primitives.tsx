@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { contactEmail } from "@/lib/site";
 import type { ReactNode } from "react";
 export function Action({
   href,
@@ -88,6 +89,7 @@ export function Footer() {
       <div className="footer-bottom">
         <span>© {new Date().getFullYear()} GhimTech</span>
         <div>
+          <a href={"mailto:" + contactEmail}>{contactEmail}</a>
           <a href="https://github.com/durga710">GitHub ↗</a>
           <Link href="/privacy">Privacy</Link>
           <span>Built by GhimTech.</span>

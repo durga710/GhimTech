@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ghimtech.org";
+export const contactEmail = "hello@ghimtech.org";
 export function pageMetadata(title: string, description: string, path: string): Metadata {
   return {
     title,

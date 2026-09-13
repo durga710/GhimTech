@@ -1,4 +1,4 @@
-import { createHmac } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { validateEnquiry } from "@/lib/enquiry.mjs";
 import { siteUrl } from "@/lib/site";
 export const runtime = "nodejs";
@@ -43,6 +43,34 @@ async function readBody(request: Request) {
   }
   return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
 }
+type Enquiry = ReturnType<typeof validateEnquiry>["data"];
+const labels: [keyof Enquiry, string][] = [
+  ["name", "Name"],
+  ["email", "Email"],
+  ["company", "Company"],
+  ["website", "Website"],
+  ["budget", "Budget"],
+  ["timeline", "Timeline"],
+  ["business", "What the company does"],
+  ["bottleneck", "What is slowing them down"],
+  ["currentProcess", "How the process is handled today"],
+  ["idealSystem", "What the ideal system would do"],
+  ["context", "Additional context"],
+];
+// Header values must stay on one line; enquiry text may legitimately contain newlines.
+const line = (value: string) => value.replace(/\s+/g, " ").trim();
+function renderEnquiry(id: string, data: Enquiry, receivedAt: string) {
+  const sections = labels
+    .filter(([key]) => data[key])
+    .map(([key, label]) => label + "\n" + data[key]);
+  return [
+    "New project enquiry from " + siteUrl + "/contact",
+    "Received " + receivedAt,
+    "Reference " + id,
+    "",
+    ...sections.flatMap((section) => [section, ""]),
+  ].join("\n");
+}
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
   const expected = new URL(siteUrl).origin;
@@ -76,15 +104,28 @@ export async function POST(request: Request) {
   const { data, errors } = validateEnquiry(input);
   if (Object.keys(errors).length)
     return reply(422, "Please check the highlighted fields.", { errors });
+  // Delivery is either a durable HTTPS webhook or an email through Resend.
+  // The webhook wins when both are configured.
   const webhook = process.env.PROJECT_WEBHOOK_URL;
   const token = process.env.PROJECT_WEBHOOK_TOKEN;
-  const redis = process.env.UPSTASH_REDIS_REST_URL;
-  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
-  const secret = process.env.RATE_LIMIT_SECRET;
-  if (!webhook || !token || !redis || !redisToken || !secret) return reply(503, unavailable);
+  const resendKey = process.env.RESEND_API_KEY;
+  const inbox = process.env.ENQUIRY_INBOX;
+  const sender = process.env.ENQUIRY_FROM || "GhimTech Enquiries <onboarding@resend.dev>";
+  // Upstash via the Vercel Marketplace injects KV_REST_API_*; a direct Upstash setup uses UPSTASH_REDIS_REST_*.
+  const redis = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  // Hashing secret keeps stored IP and email keys unlinkable. Without an explicit one it is
+  // derived from the Redis token, which anyone able to read the keys already holds.
+  const secret =
+    process.env.RATE_LIMIT_SECRET ||
+    (redisToken && createHash("sha256").update("ghimtech-rate-limit:" + redisToken).digest("hex"));
+  const viaWebhook = !!(webhook && token);
+  const viaResend = !!(resendKey && inbox && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inbox));
+  if ((!viaWebhook && !viaResend) || !redis || !redisToken || !secret)
+    return reply(503, unavailable);
   try {
-    if (new URL(webhook).protocol !== "https:" || new URL(redis).protocol !== "https:")
-      return reply(503, unavailable);
+    if (viaWebhook && new URL(webhook!).protocol !== "https:") return reply(503, unavailable);
+    if (new URL(redis).protocol !== "https:") return reply(503, unavailable);
     const hash = (value: string) => createHmac("sha256", secret).update(value).digest("hex");
     // Only trust the platform-controlled client IP header on Vercel.
     // Other hosts use a shared bucket until an explicit trusted proxy is configured.
@@ -115,14 +156,28 @@ export async function POST(request: Request) {
         "Too many enquiries have been sent. Please wait an hour before trying again.",
       );
     const receipt = hash(input.requestId + JSON.stringify(data));
-    const delivered = await fetch(webhook, {
+    const receivedAt = new Date().toISOString();
+    const delivery = viaWebhook
+      ? { url: webhook!, auth: token!, body: { id: receipt, ...data, receivedAt } }
+      : {
+          url: "https://api.resend.com/emails",
+          auth: resendKey!,
+          body: {
+            from: sender,
+            to: [inbox!],
+            reply_to: data.email,
+            subject: line("Project enquiry: " + data.name + " at " + data.company),
+            text: renderEnquiry(receipt, data, receivedAt),
+          },
+        };
+    const delivered = await fetch(delivery.url, {
       method: "POST",
       headers: {
-        Authorization: "Bearer " + token,
+        Authorization: "Bearer " + delivery.auth,
         "Content-Type": "application/json",
         "Idempotency-Key": receipt,
       },
-      body: JSON.stringify({ id: receipt, ...data, receivedAt: new Date().toISOString() }),
+      body: JSON.stringify(delivery.body),
       redirect: "error",
       signal: AbortSignal.timeout(10000),
       cache: "no-store",
