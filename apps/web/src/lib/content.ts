@@ -193,15 +193,15 @@ export type CaseStudy = {
 export const projects: CaseStudy[] = [
   {
     slug: "cyanjel-homecare",
-    company: "CyanjelHomeCare LLC",
+    company: "Cyanjel Home Care LLC",
     industry: "Home care operations",
     title: "The systems behind the care.",
     description:
-      "CyanjelHomeCare LLC is fully powered by GhimTech. An ongoing technology relationship built around the realities of a home care business.",
+      "Cyanjel Home Care LLC is fully powered by GhimTech. An ongoing technology relationship built around the realities of a home care business.",
     problem:
       "Home care involves caregivers, clients, changing schedules, documentation, and administrative follow-up. The work crosses roles and locations, so a missed handoff can create more work elsewhere.",
     system:
-      "GhimTech creates software and workflows around CyanjelHomeCare’s operations. The starting point is the work itself: how people coordinate, how information moves, and what administration needs to see.",
+      "GhimTech creates software and workflows around Cyanjel Home Care’s operations. The starting point is the work itself: how people coordinate, how information moves, and what administration needs to see.",
     capabilities: [],
     screenshots: [],
     workflow: [

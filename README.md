@@ -2,7 +2,7 @@
 
 Software built around how your business actually works.
 
-GhimTech is Durga Ghimeray’s software studio, focused on custom business software, CRM systems, workflow automation, and operational tools. CyanjelHomeCare LLC is the flagship customer.
+GhimTech is Durga Ghimeray’s software studio, focused on custom business software, CRM systems, workflow automation, and operational tools. Cyanjel Home Care LLC is the flagship customer.
 
 ## Application
 

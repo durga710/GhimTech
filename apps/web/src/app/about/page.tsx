@@ -78,7 +78,7 @@ export default function About() {
         </div>
         <div>
           <p>
-            CyanjelHomeCare LLC is fully powered by GhimTech. That relationship grounds the studio
+            Cyanjel Home Care LLC is fully powered by GhimTech. That relationship grounds the studio
             in the realities of an operating business, where software has to account for people,
             information, and administrative follow-through.
           </p>
@@ -87,7 +87,7 @@ export default function About() {
             problems, across industries and over the long term.
           </p>
           <Action href="/work/cyanjel-homecare" secondary>
-            Explore the CyanjelHomeCare story
+            Explore the Cyanjel Home Care story
           </Action>
         </div>
       </section>

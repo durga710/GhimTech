@@ -170,7 +170,7 @@ export function CareSystem() {
   return (
     <div className="care-system">
       <div className="diagram-heading">
-        <span>CYANJELHOMECARE / OPERATIONAL CONTEXT</span>
+        <span>CYANJEL HOME CARE / OPERATIONAL CONTEXT</span>
         <span>SYSTEM MAP</span>
       </div>
       <div className="care-system-body">

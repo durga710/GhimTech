@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Eyebrow, Action } from "./primitives";
 export function ProjectFeature() {
@@ -15,7 +16,7 @@ export function ProjectFeature() {
               <br />
               behind the care.
             </h2>
-            <p className="feature-company">CyanjelHomeCare LLC</p>
+            <p className="feature-company">Cyanjel Home Care LLC</p>
             <p>
               An operating business. An ongoing technology relationship. Software built around the
               people and processes behind home care.
@@ -27,11 +28,18 @@ export function ProjectFeature() {
           <Link
             className="customer-visual"
             href="/work/cyanjel-homecare"
-            aria-label="Explore CyanjelHomeCare’s operational system"
+            aria-label="Explore Cyanjel Home Care’s operational system"
           >
             <div className="customer-visual-top">
+              <Image
+                className="customer-emblem"
+                src="/work/cyanjel-home-care-mark.png"
+                alt=""
+                width={141}
+                height={125}
+              />
               <span>
-                CyanjelHomeCare
+                Cyanjel Home Care
                 <br />
                 LLC
               </span>
