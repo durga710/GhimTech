@@ -747,16 +747,9 @@ a:hover {
   letter-spacing: 0.09em;
 }
 .customer-emblem {
-  font-family: Georgia, serif;
-  font-size: 78px;
-  line-height: 1;
-  letter-spacing: -5px;
-}
-.customer-emblem > span {
-  font-family: Arial, sans-serif;
-  font-size: 35px;
-  vertical-align: super;
-  margin-left: -10px;
+  width: auto;
+  height: 74px;
+  flex-shrink: 0;
 }
 .customer-flow {
   display: flex;
@@ -1086,6 +1079,15 @@ a:hover {
   padding-block: 25px;
   gap: 30px;
   margin-top: 10px;
+}
+.case-company {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.case-company img {
+  width: auto;
+  height: 30px;
 }
 .case-meta p {
   margin: 0;

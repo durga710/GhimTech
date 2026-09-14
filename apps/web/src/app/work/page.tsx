@@ -5,7 +5,7 @@ import { ProjectFeature } from "@/components/project-feature";
 import { pageMetadata } from "@/lib/site";
 export const metadata = pageMetadata(
   "Work",
-  "Explore GhimTech’s work behind real business operations, starting with CyanjelHomeCare LLC.",
+  "Explore GhimTech’s work behind real business operations, starting with Cyanjel Home Care LLC.",
   "/work",
 );
 export default function Work() {
@@ -38,7 +38,7 @@ export default function Work() {
             a task needs a person’s judgment. The work is in those details.
           </p>
           <p>
-            CyanjelHomeCare is our flagship example of an ongoing relationship between a business
+            Cyanjel Home Care is our flagship example of an ongoing relationship between a business
             and the technology built around it.
           </p>
         </div>

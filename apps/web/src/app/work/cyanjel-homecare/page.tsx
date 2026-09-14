@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { CaseDetails } from "@/components/case-details";
 import { PageIntro, Eyebrow, ProjectCTA, Action } from "@/components/primitives";
 import { CareSystem, Transformation } from "@/components/workflow";
@@ -5,7 +6,7 @@ import { projects } from "@/lib/content";
 import { pageMetadata, siteUrl } from "@/lib/site";
 const project = projects[0];
 export const metadata = pageMetadata(
-  "CyanjelHomeCare | Home Care Operations",
+  "Cyanjel Home Care | Home Care Operations",
   project.description,
   "/work/cyanjel-homecare",
 );
@@ -13,17 +14,17 @@ export default function CaseStudy() {
   const schema = {
     "@context": "https://schema.org",
     "@type": "CreativeWork",
-    name: "CyanjelHomeCare: The systems behind the care",
+    name: "Cyanjel Home Care: The systems behind the care",
     description: project.description,
     url: siteUrl + "/work/cyanjel-homecare",
     creator: { "@id": siteUrl + "/#organization" },
-    about: { "@type": "Organization", name: project.company },
+    about: { "@type": "Organization", name: project.company, url: "https://cyanjelhomecare.com" },
   };
   return (
     <>
       <div className="case-heading">
         <PageIntro
-          label="CyanjelHomeCare LLC / Home Care Operations"
+          label="Cyanjel Home Care LLC / Home Care Operations"
           title="The systems behind the care."
         >
           <p className="case-lead">Fully powered by GhimTech.</p>
@@ -36,7 +37,10 @@ export default function CaseStudy() {
       <div className="container case-meta">
         <div>
           <span>Company</span>
-          <p>CyanjelHomeCare LLC</p>
+          <p className="case-company">
+            <Image src="/work/cyanjel-home-care-mark.png" alt="" width={141} height={125} />
+            Cyanjel Home Care LLC
+          </p>
         </div>
         <div>
           <span>Industry</span>
@@ -117,7 +121,7 @@ export default function CaseStudy() {
         </div>
         <div>
           <p>
-            CyanjelHomeCare’s relationship with GhimTech goes beyond a public website. It is a
+            Cyanjel Home Care’s relationship with GhimTech goes beyond a public website. It is a
             software partnership around the business itself.
           </p>
           <p>

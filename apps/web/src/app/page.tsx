@@ -6,7 +6,7 @@ import { articles } from "@/lib/content";
 import { pageMetadata } from "@/lib/site";
 export const metadata = pageMetadata(
   "GhimTech | Software built around your business",
-  "Custom business software, CRM systems, and automated workflows by GhimTech. Powering real-world operations at CyanjelHomeCare LLC.",
+  "Custom business software, CRM systems, and automated workflows by GhimTech. Powering real-world operations at Cyanjel Home Care LLC.",
   "/",
 );
 export default function Home() {
@@ -38,7 +38,7 @@ export default function Home() {
         <span className="proof-label">BUILT FOR REAL OPERATIONS</span>
         <Link href="/work/cyanjel-homecare">
           <span className="status-dot" />
-          Powering CyanjelHomeCare LLC <span aria-hidden="true">↗</span>
+          Powering Cyanjel Home Care LLC <span aria-hidden="true">↗</span>
         </Link>
         <span className="proof-end">People. Processes. Software.</span>
       </div>
